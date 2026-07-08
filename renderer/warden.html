@@ -2,38 +2,59 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Warden</title>
+<title>Pesto Warden</title>
 <style>
-  :root{ --coral:#c96442; --coral-lt:#e0895f; --ink:#2f2b25; --muted:#8a8377; }
+  :root{ --coral:#c96442; --coral-lt:#e0895f; --ink:#2f2b25; --muted:#8a8377; --stroke:rgba(60,50,40,.12); }
   *{box-sizing:border-box; margin:0; padding:0;}
   html,body{height:100%; background:transparent; overflow:hidden; -webkit-user-select:none; user-select:none;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
   .wrap{height:100vh; display:grid; place-items:center; -webkit-app-region:drag;}
-  .card{width:380px; text-align:center; padding:22px 24px 20px; border-radius:22px;
-    background:linear-gradient(165deg, rgba(252,249,245,0.96), rgba(244,238,229,0.96));
-    backdrop-filter:blur(26px) saturate(150%);
+  .card{width:400px; padding:20px 22px; border-radius:22px;
+    background:linear-gradient(165deg, rgba(252,249,245,0.97), rgba(244,238,229,0.97));
+    backdrop-filter:blur(26px) saturate(150%); -webkit-backdrop-filter:blur(26px) saturate(150%);
     border:1px solid rgba(201,100,66,0.35);
     box-shadow:0 26px 60px -16px rgba(80,60,40,.55);}
-  .tag{font-size:12px; font-weight:800; letter-spacing:.05em; color:var(--coral); margin-bottom:4px;}
-  .head{font-size:15px; color:var(--ink); font-weight:600; margin-bottom:10px;}
-  .count{font-size:56px; font-weight:800; color:var(--coral); line-height:1; margin:2px 0 4px;}
-  .count small{font-size:22px; font-weight:700;}
-  .hint{font-size:12px; color:var(--muted); margin-top:8px;}
+  .top{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
+  .face{width:46px; height:46px; object-fit:contain; filter:drop-shadow(0 6px 10px rgba(201,100,66,.34));}
+  .tag{font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--coral);}
+  .goal{font-size:13px; color:var(--muted); margin-top:2px;}
+  .head{font-size:16px; color:var(--ink); font-weight:750; line-height:1.35; margin-bottom:10px;}
+  .detail{font-size:12px; color:var(--muted); line-height:1.45; margin-bottom:14px;}
+  .countrow{display:flex; align-items:center; gap:13px; margin-bottom:12px;}
+  .count{width:82px; height:82px; display:grid; place-items:center; border-radius:20px;
+    background:#fff; border:1px solid var(--stroke); color:var(--coral); font-size:46px; font-weight:850;}
+  .bar{flex:1; height:9px; overflow:hidden; border-radius:999px; background:rgba(60,50,40,.08);}
+  .fill{height:100%; width:100%; border-radius:999px; background:linear-gradient(90deg,var(--coral),var(--coral-lt)); transition:width .25s linear;}
+  .hint{font-size:12px; color:var(--muted);}
   .kbd{font-size:11px; border:1px solid rgba(60,50,40,.2); border-radius:6px; padding:1px 6px; background:#fff;}
-  .stay{-webkit-app-region:no-drag; margin-top:14px; border:none; cursor:pointer; border-radius:12px;
-    padding:10px 18px; font-size:13px; font-weight:600; color:#fff;
-    background:linear-gradient(140deg,var(--coral),var(--coral-lt));}
-  .stay:hover{filter:brightness(1.05);}
+  .actions{-webkit-app-region:no-drag; display:flex; gap:9px; margin-top:14px;}
+  button{min-height:40px; border:none; cursor:pointer; border-radius:12px; padding:0 14px; font-size:13px; font-weight:700;}
+  .stay{color:var(--coral); background:rgba(201,100,66,.08); border:1px solid rgba(201,100,66,.25);}
+  .hide{color:#fff; background:linear-gradient(140deg,var(--coral),var(--coral-lt));}
+  button:hover{filter:brightness(1.04);}
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <div class="tag">🚔 WARDEN · GUARDING YOUR FOCUS</div>
-      <div class="head" id="head">Hiding this in…</div>
-      <div class="count"><span id="n">10</span><small>s</small></div>
-      <div class="hint">press <span class="kbd">ESC</span> to stay on it — I'll back off</div>
-      <button class="stay" id="stay">Stay on it</button>
+      <div class="top">
+        <img class="face" src="../assets/pesto/screenbuddy_mascot_idle.png" alt="" />
+        <div>
+          <div class="tag">Pesto Warden</div>
+          <div class="goal" id="goal">Guarding your focus</div>
+        </div>
+      </div>
+      <div class="head" id="head">This looks like drift.</div>
+      <div class="detail" id="detail">I can hide it safely. Nothing gets closed.</div>
+      <div class="countrow">
+        <div class="count" id="n">10</div>
+        <div class="bar"><div class="fill" id="fill"></div></div>
+      </div>
+      <div class="hint">Press <span class="kbd">ESC</span> or ask for more time to cancel.</div>
+      <div class="actions">
+        <button class="stay" id="stay">Give me 5 min</button>
+        <button class="hide" id="hide">Hide it now</button>
+      </div>
     </div>
   </div>
   <script src="warden.js"></script>

@@ -54,9 +54,24 @@ async function installHermes() {
 
 async function startHermesGateway() {
   const command = process.platform === 'win32' ? 'powershell.exe' : '/bin/sh';
+  const script = process.platform === 'win32'
+    ? [
+      "$ErrorActionPreference = 'Stop'",
+      '$cmd = Get-Command hermes -ErrorAction SilentlyContinue',
+      '$candidates = @()',
+      'if ($cmd) { $candidates += $cmd.Source }',
+      '$candidates += (Join-Path $env:USERPROFILE ".hermes\\bin\\hermes.exe")',
+      '$candidates += (Join-Path $env:LOCALAPPDATA "Programs\\Hermes\\hermes.exe")',
+      '$candidates += (Join-Path $env:LOCALAPPDATA "hermes\\hermes.exe")',
+      '$candidates = $candidates | Where-Object { $_ -and (Test-Path $_) }',
+      '$exe = $candidates | Select-Object -First 1',
+      'if (-not $exe) { throw "Hermes installed, but hermes.exe was not found on PATH or common install paths." }',
+      'Start-Process -FilePath $exe -ArgumentList "serve --skip-build --host 127.0.0.1 --port 9119" -WindowStyle Hidden'
+    ].join('\n')
+    : 'if command -v hermes >/dev/null 2>&1; then nohup hermes serve --skip-build --host 127.0.0.1 --port 9119 >/tmp/screenbuddy-hermes.log 2>&1 & else echo "Hermes installed, but hermes was not found on PATH." >&2; exit 1; fi';
   const args = process.platform === 'win32'
-    ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'Start-Process -WindowStyle Hidden hermes -ArgumentList gateway']
-    : ['-lc', 'nohup hermes gateway >/tmp/screenbuddy-hermes.log 2>&1 &'];
+    ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script]
+    : ['-lc', script];
   return run(command, args);
 }
 

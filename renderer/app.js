@@ -47,13 +47,13 @@ function startInstallProgress() {
     let label;
     if (elapsed < 2500) {
       target = 12 + (elapsed / 2500) * 48;
-      label = 'Scanning your PC for apps';
+      label = 'Checking local requirements';
     } else if (elapsed < 6000) {
       target = 60 + ((elapsed - 2500) / 3500) * 30;
-      label = 'Building your Life Pursuits';
+      label = 'Downloading and starting Hermes';
     } else {
       target = 90 + Math.min(7, Math.log1p((elapsed - 6000) / 2000) * 3);
-      label = 'Finishing setup';
+      label = 'Scanning apps and finishing setup';
     }
     const eased = progressValue + (target - progressValue) * 0.22;
     setProgress(Math.min(eased, 97), label);
@@ -79,7 +79,7 @@ function applySetupState(cfg) {
     msg.textContent = "I couldn't finish setup. You can try again or open help with the error already filled in.";
     openHelpBtn.hidden = false;
   } else if (status === 'installing') {
-    msg.textContent = 'Setting up — scanning your apps. Takes a few seconds.';
+    msg.textContent = 'Setting up Hermes and scanning your apps.';
     openHelpBtn.hidden = true;
   } else {
     msg.textContent = '';
@@ -103,7 +103,7 @@ async function installSetup() {
   installBtn.disabled = true;
   declineBtn.disabled = true;
   openHelpBtn.hidden = true;
-  msg.textContent = 'Scanning your PC for apps and building your Life Pursuits — a few seconds.';
+  msg.textContent = 'Installing Hermes, starting local AI, and building your Life Pursuits.';
   startInstallProgress();
   try {
     const cfg = await window.buddy.installSetup();
@@ -142,8 +142,10 @@ document.querySelectorAll('.navitem').forEach((b) => {
     const page = b.dataset.page;
     document.getElementById('page-pursuits').hidden = page !== 'pursuits';
     document.getElementById('page-privacy').hidden = page !== 'privacy';
+    document.getElementById('page-jarvis').hidden = page !== 'jarvis';
     document.getElementById('page-premium').hidden = page !== 'premium';
     if (page === 'privacy') loadPrivacy();
+    if (page === 'jarvis') loadJarvis();
     if (page === 'premium') loadPremium();
   });
 });
@@ -270,6 +272,42 @@ async function saveTiers() {
   flash('tierMsg', 'Saved ✅');
 }
 document.getElementById('saveTiers').addEventListener('click', saveTiers);
+
+// ---------- Jarvis Mode ----------
+async function loadJarvis() {
+  const cfg = await window.buddy.getConfig();
+  const pursuitSelect = document.getElementById('activePursuit');
+  const active = cfg.jarvis?.activePursuit || '';
+  pursuitSelect.innerHTML = '<option value="">No active pursuit</option>' +
+    (cfg.pursuits || []).map((p) => {
+      const name = p.name || '';
+      return `<option value="${escapeHtml(name)}" ${name === active ? 'selected' : ''}>${escapeHtml(name)}</option>`;
+    }).join('');
+  document.getElementById('jarvisMode').value = cfg.mode || 'nudge';
+  document.getElementById('focusDriftLimit').value = cfg.accountability?.focusDriftLimitMin ?? cfg.accountability?.distractionLimitMin ?? 15;
+  document.getElementById('wardenSeconds').value = cfg.accountability?.wardenSeconds ?? 10;
+}
+
+async function saveJarvis(clearGoal = false) {
+  const activePursuit = clearGoal ? '' : document.getElementById('activePursuit').value;
+  const settings = {
+    mode: document.getElementById('jarvisMode').value,
+    jarvis: {
+      activePursuit,
+      activeUntil: null
+    },
+    accountability: {
+      focusDriftLimitMin: Math.max(1, Number(document.getElementById('focusDriftLimit').value || 15)),
+      wardenSeconds: Math.max(3, Number(document.getElementById('wardenSeconds').value || 10))
+    }
+  };
+  await window.buddy.saveJarvis(settings);
+  flash('jarvisMsg', clearGoal ? 'Active pursuit cleared.' : 'Jarvis mode saved.');
+  await loadJarvis();
+}
+
+document.getElementById('saveJarvis').addEventListener('click', () => saveJarvis(false));
+document.getElementById('clearJarvisGoal').addEventListener('click', () => saveJarvis(true));
 
 // ---------- Premium ----------
 function renderPremium(s) {

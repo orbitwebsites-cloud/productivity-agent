@@ -1,11 +1,11 @@
 # ScreenBuddy (Pesto) — v1
 
-A cute desktop buddy that quietly tracks what you work on (metadata only — active app +
-window title, **no screenshots** in v1) and answers questions like *"what was I working on
-yesterday?"* and *"how productive was I today?"*. 100% local. Mac + Windows (Electron).
+A cute desktop buddy that tracks what you work on (metadata only - active app +
+window title, **no screenshots** in v1), answers questions like *"what was I working on
+yesterday?"*, and uses Jarvis Mode to guard your active pursuit.
 
-This is the **thin end-to-end slice**: real tracking → local store → the buddy answers real
-questions. No API keys, no cloud, no terminal for end users.
+This is the **thin end-to-end slice**: real tracking -> local store -> Pesto answers real
+questions -> Warden/Jarvis can safely minimize distractions. No terminal for end users.
 
 ## Run it (developer)
 
@@ -18,7 +18,7 @@ npm start
 
 - **macOS:** grant **Screen Recording** and **Accessibility** when prompted — required to read
   window titles. (App names work without it; titles need the permission.)
-- **Windows:** works out of the box.
+- **Windows:** first run opens the setup screen. Pesto can install/start Hermes and scan local apps from the GUI.
 
 Summon / hide the buddy anytime with **Alt+Space**. It sits in the bottom-right corner.
 
@@ -29,7 +29,7 @@ Summon / hide the buddy anytime with **Alt+Space**. It sits in the bottom-right 
 
 ## Configure
 Everything has a GUI: the desktop app window (⚙ from the widget) has **Life Pursuits**,
-**Privacy Tiers**, and **Premium** pages, plus a one-button "Scan my PC for apps" that builds
+**Privacy Tiers**, **Jarvis Mode**, and **Premium** pages, plus a one-button "Scan my PC for apps" that builds
 pursuits automatically. Raw settings live in `screenbuddy-config.json` in Electron's userData dir:
 - **macOS:** `~/Library/Application Support/screenbuddy/`
 - **Windows:** `%APPDATA%\screenbuddy\`
@@ -37,10 +37,13 @@ pursuits automatically. Raw settings live in `screenbuddy-config.json` in Electr
 Edit `pursuits` (your goals + keywords), `distractions`, and per-app `privacyTiers`
 (`full` / `private` / `off`). Activity is stored in `activity.jsonl` in the same folder.
 
-## Premium (hosted AI)
-AI answers are a paid feature on our hosted backend (`backend/`, live on Vercel) — sign in on
-the app's **Premium ✨** page, subscribe via Stripe, and widget questions get LLM-phrased
-answers. Free features never call the network. See `backend/README.md` for server setup.
+## AI Answers
+Pesto uses Hermes as the default local AI provider. First-run setup installs Hermes and starts
+its headless service when possible. If Hermes is installed but no inference provider/model is
+configured, Pesto falls back to deterministic local activity answers.
+
+Premium hosted AI still exists as an optional backend path (`backend/`, live on Vercel) for
+signed-in users with Stripe subscriptions. See `backend/README.md` for server setup.
 
 ## What's intentionally NOT here yet
 Screenshots/AI vision, voice, cloud sync of activity data. See `SPEC.md` for the full plan
@@ -49,5 +52,5 @@ and `RECOVERY.md` for build state.
 ## Build installers
 ```bash
 npm run build:mac    # .dmg
-npm run build:win    # .exe (NSIS)
+npm run build:win    # portable Windows .exe in dist/
 ```

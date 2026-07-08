@@ -37,12 +37,13 @@ async function sampleOnce(config) {
       ts: Date.now(),
       app: appName,
       title,
+      pid: win.pid || null,
       category,
       productive,
       pursuit,
       durationMs: config.trackIntervalMs
     });
-    if (sampleCb) { try { sampleCb({ app: appName, title, category, productive, pursuit }); } catch { /* ignore */ } }
+    if (sampleCb) { try { sampleCb({ app: appName, title, pid: win.pid || null, category, productive, pursuit }); } catch { /* ignore */ } }
     lastError = null;
   } catch (err) {
     // Most likely: missing macOS Screen Recording / Accessibility permission.

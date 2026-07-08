@@ -27,6 +27,8 @@ contextBridge.exposeInMainWorld('buddy', {
   openApp: () => ipcRenderer.invoke('buddy:openApp'),
   setMode: (mode) => ipcRenderer.invoke('buddy:setMode', mode),
   saveAccountability: (settings) => ipcRenderer.invoke('buddy:saveAccountability', settings),
+  saveJarvis: (settings) => ipcRenderer.invoke('buddy:saveJarvis', settings),
+  runAction: (actionId) => ipcRenderer.invoke('buddy:runAction', actionId),
   wardenHide: () => ipcRenderer.invoke('warden:hide'),
   wardenCancel: () => ipcRenderer.invoke('warden:cancel'),
   premiumStatus: () => ipcRenderer.invoke('premium:status'),

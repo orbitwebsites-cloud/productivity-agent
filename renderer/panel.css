@@ -66,6 +66,11 @@ html,body{height:100%; overflow:hidden; background:transparent; font-family:-app
   white-space:pre-wrap; overflow-wrap:break-word; word-break:normal;}
 .msg.pesto{margin-right:auto; background:var(--paper); border:1px solid var(--stroke); color:#3a352d;}
 .msg.me{margin-left:auto; background:linear-gradient(160deg,var(--coral-lt),var(--coral)); color:#fff;}
+.actions{display:flex; flex-wrap:wrap; gap:7px; padding:0 14px 8px;}
+.actionbtn{border:1px solid rgba(201,100,66,.28); border-radius:10px; background:rgba(201,100,66,.08);
+  color:var(--coral); font-size:12px; font-weight:700; padding:8px 10px; cursor:pointer;}
+.actionbtn:hover{background:rgba(201,100,66,.15);}
+.actionbtn:disabled{opacity:.55; cursor:default;}
 .chat::-webkit-scrollbar{width:6px;} .chat::-webkit-scrollbar-thumb{background:rgba(60,50,40,.15); border-radius:3px;}
 
 /* quick chips */

@@ -9,7 +9,7 @@ const providers = require('./providers');
 const setup = require('./setup');
 const accountability = require('./accountability');
 const premium = require('./premium');
-const { minimizeActiveWindow } = require('./activewin');
+const { minimizeActiveWindow, activateWindow, launchOrActivateApp } = require('./activewin');
 
 const ASSET = (f) => path.join(__dirname, '..', 'assets', 'pesto', f);
 const IDLE_PNG = ASSET('screenbuddy_mascot_idle.png');
@@ -21,8 +21,9 @@ let wardenWin = null; // the Warden countdown overlay
 let tray = null;
 let dragOffset = { x: 0, y: 0 };
 let buddyStarted = false;
+let lastPrimaryWindow = null;
 
-// Only one instance — a second launch just shows the buddy.
+// Only one instance: a second launch just shows the buddy.
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
@@ -95,7 +96,7 @@ function togglePanel() {
   else showPanel();
 }
 
-// The full desktop app window — normal chrome, resizable, scrollable.
+// The full desktop app window: normal chrome, resizable, scrollable.
 function showApp() {
   if (appWin) { appWin.show(); appWin.focus(); return; }
   appWin = new BrowserWindow({
@@ -110,10 +111,11 @@ function showApp() {
 }
 
 const MODES = [
-  { id: 'chill', label: '🧊 Chill — just track, stay quiet' },
-  { id: 'nudge', label: '👋 Nudge — gentle reminders' },
-  { id: 'drill', label: '🪖 Drill Sergeant — call me out' },
-  { id: 'warden', label: '🚔 Warden — hide distractions' }
+  { id: 'chill', label: 'Chill - just track, stay quiet' },
+  { id: 'nudge', label: 'Nudge - gentle reminders' },
+  { id: 'drill', label: 'Drill Sergeant - call me out' },
+  { id: 'warden', label: 'Warden - hide distractions' },
+  { id: 'jarvis', label: 'Jarvis - guard active pursuit' }
 ];
 
 const LIMITS = [5, 10, 15, 30, 60];
@@ -158,7 +160,7 @@ function buildTray() {
   let img = nativeImage.createFromPath(IDLE_PNG);
   if (!img.isEmpty()) img = img.resize({ width: 18, height: 18 });
   tray = new Tray(img);
-  tray.setToolTip('ScreenBuddy — Pesto');
+  tray.setToolTip('ScreenBuddy - Pesto');
   tray.setContextMenu(trayMenu());
   tray.on('click', showPanel);
 }
@@ -172,11 +174,11 @@ function notify(title, body) {
   try { new Notification({ title, body, silent: false }).show(); } catch { /* ignore */ }
 }
 
-function showWarden(appName) {
+function showWarden(appName, context = {}) {
   if (wardenWin) return; // one at a time
   const secs = loadConfig().accountability?.wardenSeconds ?? 10;
   const { workArea } = screen.getPrimaryDisplay();
-  const W = 420, H = 260;
+  const W = 440, H = 320;
   wardenWin = new BrowserWindow({
     width: W, height: H,
     x: Math.round(workArea.x + (workArea.width - W) / 2),
@@ -186,22 +188,54 @@ function showWarden(appName) {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
   });
   wardenWin.setAlwaysOnTop(true, 'screen-saver');
-  const q = `?app=${encodeURIComponent(appName)}&secs=${encodeURIComponent(secs)}`;
-  wardenWin.loadFile(path.join(__dirname, '..', 'renderer', 'warden.html'), { search: q });
+  const q = new URLSearchParams({
+    app: appName || 'this app',
+    secs: String(secs),
+    pursuit: context.pursuit || '',
+    reason: context.reason || 'distraction',
+    category: context.category || '',
+    currentPursuit: context.currentPursuit || ''
+  }).toString();
+  wardenWin.loadFile(path.join(__dirname, '..', 'renderer', 'warden.html'), { search: `?${q}` });
   wardenWin.on('closed', () => { wardenWin = null; });
 }
 function closeWarden() { if (wardenWin) { wardenWin.close(); wardenWin = null; } }
+
+function jarvisActivePursuit(config) {
+  const j = config.jarvis || {};
+  if (!j.activePursuit) return '';
+  if (j.activeUntil && Date.now() > Number(j.activeUntil)) return '';
+  return j.activePursuit;
+}
+
+function rememberPrimaryWindow(config, sample) {
+  if (!sample || !sample.app || sample.category === 'Distraction') return;
+  const goal = jarvisActivePursuit(config);
+  if (goal && sample.pursuit !== goal) return;
+  if (!sample.productive && !sample.pursuit) return;
+  lastPrimaryWindow = {
+    app: sample.app,
+    title: sample.title || '',
+    pid: sample.pid || null,
+    pursuit: sample.pursuit || '',
+    ts: Date.now()
+  };
+}
 
 function startBuddyRuntime() {
   if (buddyStarted) return;
   createOrb();
   createPanel();
   accountability.configure({
-    onNudge: (msg) => notify('Pesto 👋', msg),
-    onDrill: (msg) => notify('Pesto 🪖', msg),
-    onWarden: (appName) => showWarden(appName)
+    onNudge: (msg) => notify('Pesto', msg),
+    onDrill: (msg) => notify('Pesto', msg),
+    onWarden: (appName, context) => showWarden(appName, context)
   });
-  tracker.start(() => loadConfig(), (sample) => accountability.onSample(loadConfig(), sample));
+  tracker.start(() => loadConfig(), (sample) => {
+    const cfg = loadConfig();
+    rememberPrimaryWindow(cfg, sample);
+    accountability.onSample(cfg, sample);
+  });
   buddyStarted = true;
 }
 
@@ -227,8 +261,98 @@ ipcMain.on('orb:dragMove', (_e, { x, y }) => {
   if (panel && panel.isVisible()) positionPanelNearOrb();
 });
 
+function findPursuit(config, text) {
+  const hay = String(text || '').toLowerCase();
+  let best = null;
+  let score = 0;
+  for (const p of config.pursuits || []) {
+    const name = String(p.name || '').toLowerCase();
+    let s = name && hay.includes(name) ? 100 : 0;
+    for (const part of name.split(/\s+/).filter(Boolean)) {
+      if (part.length > 2 && hay.includes(part)) s += 15;
+    }
+    for (const kw of p.keywords || []) {
+      const k = String(kw || '').toLowerCase();
+      if (k && hay.includes(k)) s += 10;
+    }
+    if (s > score) { score = s; best = p; }
+  }
+  return score ? best : null;
+}
+
+function parseDurationMs(text) {
+  const q = String(text || '').toLowerCase();
+  const min = q.match(/(?:for|next)\s+(\d+)\s*(?:m|min|minute|minutes)/);
+  if (min) return Number(min[1]) * 60000;
+  const hr = q.match(/(?:for|next)\s+(\d+)\s*(?:h|hr|hour|hours)/);
+  if (hr) return Number(hr[1]) * 3600000;
+  if (q.includes('next hour') || q.includes('for an hour')) return 3600000;
+  return null;
+}
+
+function setJarvisPursuit(pursuitName, durationMs) {
+  const cur = loadConfig();
+  const activeUntil = durationMs ? Date.now() + durationMs : null;
+  const cfg = saveConfig({
+    mode: 'jarvis',
+    jarvis: { ...(cur.jarvis || {}), activePursuit: pursuitName, activeUntil }
+  });
+  accountability.reset();
+  refreshTray();
+  return cfg;
+}
+
+async function handleJarvisQuestion(question) {
+  const q = String(question || '').trim();
+  const lower = q.toLowerCase();
+  const config = loadConfig();
+
+  if (/(switch|switching|focus|set).*(goal|pursuit|to)|^focus on /.test(lower)) {
+    const pursuit = findPursuit(config, q);
+    if (!pursuit) {
+      return { text: "I couldn't match that to one of your Life Pursuits. Open the app and add it first." };
+    }
+    const durationMs = parseDurationMs(q);
+    setJarvisPursuit(pursuit.name, durationMs);
+    const suffix = durationMs ? ` for ${Math.round(durationMs / 60000)} minutes` : '';
+    return { text: `Jarvis mode on. Active pursuit: ${pursuit.name}${suffix}. I'll guard against drift from that goal.` };
+  }
+
+  if (lower.includes('pause jarvis') || lower.includes('pause accountability') || lower.includes('chill mode')) {
+    const cfg = saveConfig({ mode: 'chill' });
+    accountability.reset();
+    refreshTray();
+    return { text: `Jarvis is paused. Current mode: ${cfg.mode}.` };
+  }
+
+  if (lower.includes('jarvis mode') || lower.includes('warden mode')) {
+    const cfg = saveConfig({ mode: 'jarvis' });
+    accountability.reset();
+    refreshTray();
+    const goal = jarvisActivePursuit(cfg);
+    return { text: goal ? `Jarvis mode is on, guarding ${goal}.` : 'Jarvis mode is on. Set an active pursuit and I will guard it.' };
+  }
+
+  const wantsRecovery = lower.includes('where was i') ||
+    lower.includes('restore yesterday') ||
+    (lower.includes('working on') && lower.includes('yesterday'));
+  if (wantsRecovery && lower.includes('yesterday')) {
+    const text = await answers.answer(question, config);
+    return {
+      text,
+      actions: [{ id: 'restore-workspace:yesterday', label: "Restore yesterday's workspace" }]
+    };
+  }
+
+  return null;
+}
+
 // ---- panel IPC ----
-ipcMain.handle('buddy:ask', (_e, question) => answers.answer(question, loadConfig()));
+ipcMain.handle('buddy:ask', async (_e, question) => {
+  const jarvis = await handleJarvisQuestion(question);
+  if (jarvis) return jarvis;
+  return answers.answer(question, loadConfig());
+});
 ipcMain.handle('buddy:today', () => {
   const start = answers.startOfDay(Date.now());
   const s = answers.summarize(start, Date.now());
@@ -239,7 +363,15 @@ ipcMain.handle('buddy:today', () => {
   };
 });
 ipcMain.handle('buddy:getConfig', () => loadConfig());
-ipcMain.handle('buddy:status', () => ({ tracking: loadConfig().trackingEnabled, error: tracker.getLastError() }));
+ipcMain.handle('buddy:status', () => {
+  const cfg = loadConfig();
+  return {
+    tracking: cfg.trackingEnabled,
+    error: tracker.getLastError(),
+    mode: cfg.mode || 'nudge',
+    activePursuit: jarvisActivePursuit(cfg)
+  };
+});
 ipcMain.handle('panel:hide', () => { if (panel) panel.hide(); });
 ipcMain.handle('buddy:quit', () => app.quit());
 
@@ -364,16 +496,52 @@ async function buildProfileFromScan(replaceAll) {
   };
 }
 
-// "Start Pesto" — free local setup. No Hermes install. We DO scan the PC for apps so
-// pursuits are pre-built. AI is a hosted Premium feature added later (sign-in).
+function errorMessage(err) {
+  return String(err && (err.stack || err.message) || err || 'Unknown setup error').slice(0, 1800);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForHermes(config, timeoutMs = 20000) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError = null;
+  while (Date.now() < deadline) {
+    try {
+      await providers.testProvider(config);
+      return true;
+    } catch (err) {
+      lastError = err;
+      await sleep(1000);
+    }
+  }
+  throw lastError || new Error('Hermes did not become ready in time.');
+}
+
+// "Start Pesto": install/start the local Hermes AI helper, scan local apps, and
+// pre-build pursuits. If anything fails, the setup page can open support with
+// the exact error already attached.
 ipcMain.handle('buddy:installSetup', async (event) => {
   requireAppWindow(event);
-  try { await buildProfileFromScan(true); } catch { /* scan is best-effort */ }
-  const cfg = saveConfig({
-    setup: { status: 'ready', lastError: '', completedAt: new Date().toISOString() }
-  });
-  startBuddyRuntime();
-  return cfg;
+  saveConfig({ setup: { status: 'installing', lastError: '', completedAt: null } });
+  try {
+    await setup.installHermes();
+    await setup.startHermesGateway();
+    try { await buildProfileFromScan(true); } catch { /* scan is best-effort */ }
+
+    const cfg = saveConfig({
+      provider: 'hermes',
+      setup: { status: 'ready', lastError: '', completedAt: new Date().toISOString() }
+    });
+    await waitForHermes(cfg);
+    startBuddyRuntime();
+    return loadConfig();
+  } catch (err) {
+    const msg = errorMessage(err);
+    saveConfig({ setup: { status: 'failed', lastError: msg, completedAt: null } });
+    throw new Error(msg);
+  }
 });
 
 // Manual "Scan my PC" button from the app window.
@@ -401,6 +569,10 @@ ipcMain.handle('premium:upgrade', (event) => { requireAppWindow(event); return p
 ipcMain.handle('warden:hide', async () => {
   closeWarden();
   try { await minimizeActiveWindow(); } catch { /* ignore */ }
+  if (lastPrimaryWindow) {
+    await new Promise((resolve) => setTimeout(resolve, 180));
+    try { await activateWindow(lastPrimaryWindow); } catch { /* best-effort */ }
+  }
   return { ok: true };
 });
 ipcMain.handle('warden:cancel', () => { closeWarden(); return { ok: true }; });
@@ -408,7 +580,7 @@ ipcMain.handle('warden:cancel', () => { closeWarden(); return { ok: true }; });
 // Set the accountability mode + thresholds from the app window.
 ipcMain.handle('buddy:setMode', (event, mode) => {
   requireAppWindow(event);
-  const id = ['chill', 'nudge', 'drill', 'warden'].includes(mode) ? mode : 'nudge';
+  const id = ['chill', 'nudge', 'drill', 'warden', 'jarvis'].includes(mode) ? mode : 'nudge';
   const cfg = saveConfig({ mode: id });
   accountability.reset();
   refreshTray();
@@ -417,7 +589,7 @@ ipcMain.handle('buddy:setMode', (event, mode) => {
 ipcMain.handle('buddy:saveAccountability', (event, settings) => {
   requireAppWindow(event);
   const cur = loadConfig();
-  const id = ['chill', 'nudge', 'drill', 'warden'].includes(settings?.mode) ? settings.mode : cur.mode;
+  const id = ['chill', 'nudge', 'drill', 'warden', 'jarvis'].includes(settings?.mode) ? settings.mode : cur.mode;
   const cfg = saveConfig({
     mode: id,
     accountability: { ...(cur.accountability || {}), ...(settings?.accountability || {}) }
@@ -427,8 +599,63 @@ ipcMain.handle('buddy:saveAccountability', (event, settings) => {
   return cfg;
 });
 
-// Apps the user has actually used recently — helps them pick keywords when
-// building pursuits (so "Other" becomes "Tech Job", etc.).
+// Save Jarvis settings and context-recovery actions.
+ipcMain.handle('buddy:saveJarvis', (event, settings) => {
+  requireAppWindow(event);
+  const cur = loadConfig();
+  const id = ['chill', 'nudge', 'drill', 'warden', 'jarvis'].includes(settings?.mode) ? settings.mode : cur.mode;
+  const cfg = saveConfig({
+    mode: id,
+    accountability: { ...(cur.accountability || {}), ...(settings?.accountability || {}) },
+    jarvis: { ...(cur.jarvis || {}), ...(settings?.jarvis || {}) }
+  });
+  accountability.reset();
+  refreshTray();
+  return cfg;
+});
+
+async function restoreWorkspace(label) {
+  const { getActivityBetween } = require('./db');
+  const range = answers.rangeFor(label === 'yesterday' ? 'yesterday' : 'today');
+  const rows = getActivityBetween(range.start, range.end);
+  if (!rows.length) return { text: `I don't have enough activity logged for ${range.label} to restore yet.` };
+
+  const byApp = new Map();
+  const byPursuit = new Map();
+  for (const r of rows) {
+    if (!r.app || r.app === 'Unknown' || r.category === 'Distraction') continue;
+    byApp.set(r.app, (byApp.get(r.app) || 0) + (r.durationMs || 0));
+    if (r.pursuit) byPursuit.set(r.pursuit, (byPursuit.get(r.pursuit) || 0) + (r.durationMs || 0));
+  }
+
+  const limit = loadConfig().jarvis?.restoreWindowLimit || 3;
+  const apps = [...byApp.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);
+  const pursuit = [...byPursuit.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+  if (pursuit) setJarvisPursuit(pursuit, 3600000);
+
+  const opened = [];
+  for (const [appName] of apps) {
+    try {
+      await launchOrActivateApp(appName);
+      opened.push(appName);
+    } catch {
+      // Some process names are not directly launchable. Best-effort only.
+    }
+  }
+
+  const appText = opened.length
+    ? `I reopened or focused: ${opened.join(', ')}.`
+    : "I found the context, but couldn't reopen those apps automatically.";
+  const goalText = pursuit ? ` Active pursuit is now ${pursuit} for the next hour.` : '';
+  return { text: `${appText}${goalText}` };
+}
+
+ipcMain.handle('buddy:runAction', async (_event, actionId) => {
+  if (actionId === 'restore-workspace:yesterday') return restoreWorkspace('yesterday');
+  return { text: "I don't know how to run that action yet." };
+});
+
+// Apps the user has actually used recently; helps build pursuit keywords.
 ipcMain.handle('buddy:recentApps', () => {
   const { getActivityBetween } = require('./db');
   const rows = getActivityBetween(Date.now() - 3 * 86400000, Date.now());

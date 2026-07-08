@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ScreenBuddy - Pesto</title>
-  <meta name="description" content="Download ScreenBuddy, the local productivity companion powered by Pesto." />
+  <meta name="description" content="Download ScreenBuddy, the proactive desktop companion that helps you stay on your chosen pursuit." />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -14,43 +14,76 @@
         <img src="assets/pesto.png" alt="" />
         <span>ScreenBuddy</span>
       </a>
-      <a class="support-link" href="/support.html">Support</a>
+      <div class="navlinks">
+        <a href="#jarvis">Jarvis Mode</a>
+        <a href="#setup">Setup</a>
+        <a href="/support.html">Support</a>
+      </div>
     </nav>
 
-    <section class="hero">
+    <section class="hero" aria-labelledby="hero-title">
+      <img class="hero-pesto" src="assets/pesto.png" alt="" />
       <div class="hero-copy">
         <p class="kicker">Meet Pesto</p>
-        <h1>A tiny desktop buddy that remembers what you were working on.</h1>
-        <p class="lede">ScreenBuddy tracks app and window metadata locally, answers productivity questions, and helps you sort time into the pursuits you actually care about.</p>
+        <h1 id="hero-title">Your desktop focus Jarvis.</h1>
+        <p class="lede">ScreenBuddy watches your active apps locally, keeps your current pursuit in view, and steps in before a quick distraction turns into an hour.</p>
         <div class="actions">
-          <a id="downloadLink" class="download" href="https://github.com/orbitwebsites-cloud/screenbuddy/releases/latest" rel="noopener">Download for Windows</a>
-          <a class="secondary" href="https://github.com/orbitwebsites-cloud/screenbuddy" rel="noopener">View GitHub</a>
+          <a id="downloadLink" class="download" href="https://github.com/orbitwebsites-cloud/productivity-agent/releases/latest" rel="noopener">Download for Windows</a>
+          <a class="secondary" href="/support.html">Setup help</a>
         </div>
-        <p class="fineprint">Windows first. Mac build coming after the setup flow is polished.</p>
+        <p class="fineprint">Windows beta. Pesto asks before installing required helpers and never captures screen pixels unless you explicitly enable a future feature.</p>
       </div>
-      <div class="mascot-stage" aria-hidden="true">
-        <div class="orbit orbit-one"></div>
-        <div class="orbit orbit-two"></div>
-        <img src="assets/pesto.png" alt="" />
+      <div class="status-strip" aria-label="Feature summary">
+        <span><strong>Warden</strong> hides distractions safely</span>
+        <span><strong>Recovery</strong> restores yesterday's context</span>
+        <span><strong>Pursuits</strong> adapt what counts as productive</span>
       </div>
     </section>
 
-    <section class="split">
-      <article>
-        <span class="num">01</span>
-        <h2>Ask what happened</h2>
-        <p>“What was I working on yesterday?” gets answered from your local activity log.</p>
-      </article>
-      <article>
-        <span class="num">02</span>
-        <h2>Define your pursuits</h2>
-        <p>Tell Pesto what counts as your work, learning, fitness, or side projects.</p>
-      </article>
-      <article>
-        <span class="num">03</span>
-        <h2>Stay local first</h2>
-        <p>Unknown apps default private. Screen pixels are not captured unless explicitly enabled later.</p>
-      </article>
+    <section id="jarvis" class="feature-band">
+      <div>
+        <p class="kicker">Jarvis Mode</p>
+        <h2>Pesto does not take over your mouse. It keeps you honest.</h2>
+      </div>
+      <div class="feature-grid">
+        <article>
+          <span class="num">01</span>
+          <h3>Warden Intervention</h3>
+          <p>If your active goal is Tech Job and you drift to a blocked app, Pesto warns you, counts down, then minimizes the distraction without destroying work.</p>
+        </article>
+        <article>
+          <span class="num">02</span>
+          <h3>Context Recovery</h3>
+          <p>Ask where you were yesterday and Pesto summarizes the apps, windows, and pursuits you were actually using, then offers to restore the workspace.</p>
+        </article>
+        <article>
+          <span class="num">03</span>
+          <h3>Goal Switching</h3>
+          <p>Tell Pesto you are switching pursuits for the next hour. YouTube can be productive for Cooking and distracting for Tech Job.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="setup" class="setup-band">
+      <div>
+        <p class="kicker">No terminal setup</p>
+        <h2>Download, approve helpers, and let Pesto handle the boring parts.</h2>
+        <p class="lede">The installer explains what it needs, downloads missing pieces with progress, and opens a prefilled support form if anything fails.</p>
+      </div>
+      <div class="setup-steps" aria-label="Setup flow">
+        <article>
+          <strong>1</strong>
+          <span>Checks required helpers</span>
+        </article>
+        <article>
+          <strong>2</strong>
+          <span>Downloads fast at first, then slows near the finish so progress feels honest</span>
+        </article>
+        <article>
+          <strong>3</strong>
+          <span>Opens support with the exact error already filled in</span>
+        </article>
+      </div>
     </section>
   </main>
   <script src="site.js"></script>

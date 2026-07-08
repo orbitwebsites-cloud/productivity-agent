@@ -42,7 +42,20 @@ const DEFAULTS = {
   // Accountability intensity. words-only for v1: chill | nudge | drill. (warden = later)
   mode: 'nudge',
 
-  // Premium — hosted AI. Sign in (Supabase) + subscription (Stripe) unlock
+  accountability: {
+    distractionLimitMin: 15,
+    focusDriftLimitMin: 15,
+    cooldownMin: 5,
+    wardenSeconds: 10
+  },
+
+  jarvis: {
+    activePursuit: '',
+    activeUntil: null,
+    restoreWindowLimit: 3
+  },
+
+  // Premium - hosted AI. Sign in (Supabase) + subscription (Stripe) unlock
   // natural-language answers from our backend. Only tiny text summaries are
   // ever sent; the anon key below is publishable by design.
   premium: {
@@ -52,10 +65,10 @@ const DEFAULTS = {
     session: null
   },
 
-  // Which AI layer phrases chat answers. 'backend' = hosted Premium (default);
-  // local providers remain as a power-user path. Deterministic local summaries
-  // are always the fallback, so the widget works offline and signed-out.
-  provider: 'backend',
+  // Which AI layer phrases chat answers. Hermes is installed during first-run
+  // setup. Deterministic local summaries are always the fallback, so the widget
+  // still answers basic activity questions when the helper is offline.
+  provider: 'hermes',
   hermes: {
     baseUrl: 'http://127.0.0.1:8642/v1',
     apiKey: 'change-me-local-dev',

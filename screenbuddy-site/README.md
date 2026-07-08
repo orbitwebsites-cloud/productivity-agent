@@ -23,3 +23,13 @@ Attach both custom domains to the same deployment:
 
 The form posts to `https://formsubmit.co/support@orbitboyzz.me`.
 That inbox must confirm FormSubmit once before messages are delivered.
+
+## Download Link
+
+The home page currently points to:
+
+```text
+https://github.com/orbitwebsites-cloud/productivity-agent/releases/latest
+```
+
+Because the repo is private, public visitors will not be able to download from that URL until an installer is published to a public release bucket, a public GitHub release repo, or another public download host.

@@ -1,8 +1,8 @@
 'use strict';
 
 const downloads = {
-  win32: 'https://github.com/orbitwebsites-cloud/screenbuddy/releases/latest',
-  darwin: 'https://github.com/orbitwebsites-cloud/screenbuddy/releases/latest'
+  win32: 'https://github.com/orbitwebsites-cloud/productivity-agent/releases/latest',
+  darwin: 'https://github.com/orbitwebsites-cloud/productivity-agent/releases/latest'
 };
 
 const platform = navigator.userAgentData?.platform || navigator.platform || '';

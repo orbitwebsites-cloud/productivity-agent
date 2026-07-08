@@ -49,6 +49,6 @@ Optional: Supabase → Auth → disable "Confirm email" for frictionless sign-up
 - Old Hermes/Ollama provider path still exists as a power-user option (unused by default).
 
 ## Run / build
-- Dev: `npm start` · Build exe: `npm run build:win` → `dist\ScreenBuddy Setup 0.1.0.exe`
+- Dev: `npm start` · Build exe: `npm run build:win` -> `dist\ScreenBuddy 0.1.0.exe`
 - Backend redeploy: `npx vercel deploy --prod --yes` from repo root (CLI is authed).
 - Test premium flow: app → Premium ✨ → create account → sign in → Upgrade (needs Stripe env).

@@ -33,7 +33,7 @@ $procId = 0
 $p = Get-Process -Id $procId -ErrorAction SilentlyContinue
 $name = if ($p) { $p.ProcessName } else { "Unknown" }
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-Write-Output ($name + "|||" + $sb.ToString())
+Write-Output ($name + "|||" + $sb.ToString() + "|||" + $procId)
 `;
 
 function ensureWinScript() {
@@ -79,6 +79,53 @@ async function minimizeActiveWindow() {
   }
 }
 
+async function activateWindow(target) {
+  if (!target) return;
+  const pid = target.pid ? String(target.pid) : '';
+  const appName = target.app ? String(target.app) : '';
+  if (process.platform === 'win32') {
+    const script = `
+Add-Type -AssemblyName Microsoft.VisualBasic
+$pidText = '${pid.replace(/'/g, "''")}'
+$appName = '${appName.replace(/'/g, "''")}'
+$ok = $false
+if ($pidText) {
+  try { $ok = [Microsoft.VisualBasic.Interaction]::AppActivate([int]$pidText) } catch { $ok = $false }
+}
+if (-not $ok -and $appName) {
+  $p = Get-Process -Name $appName -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($p) { try { $ok = [Microsoft.VisualBasic.Interaction]::AppActivate([int]$p.Id) } catch { $ok = $false } }
+}
+Write-Output $(if ($ok) { 'ok' } else { 'miss' })
+`;
+    await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script], 2500);
+  } else if (process.platform === 'darwin' && appName) {
+    await run('osascript', ['-e', `tell application "${appName.replace(/"/g, '\\"')}" to activate`], 2500);
+  }
+}
+
+async function launchOrActivateApp(appName) {
+  if (!appName) return false;
+  try {
+    await activateWindow({ app: appName });
+    return true;
+  } catch {
+    // Fall through and attempt to launch by process/app name.
+  }
+  if (process.platform === 'win32') {
+    await run('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+      '-Command', `Start-Process '${String(appName).replace(/'/g, "''")}'`
+    ], 2500);
+    return true;
+  }
+  if (process.platform === 'darwin') {
+    await run('open', ['-a', appName], 2500);
+    return true;
+  }
+  return false;
+}
+
 // Run a command, resolve its trimmed stdout, reject on error/timeout.
 function run(cmd, args, timeoutMs = 4000) {
   return new Promise((resolve, reject) => {
@@ -117,7 +164,12 @@ async function getActiveWindow() {
   }
   const idx = raw.indexOf('|||');
   if (idx === -1) return { app: raw || 'Unknown', title: '' };
-  return { app: raw.slice(0, idx) || 'Unknown', title: raw.slice(idx + 3) };
+  const parts = raw.split('|||');
+  return {
+    app: parts[0] || 'Unknown',
+    title: parts[1] || '',
+    pid: parts[2] ? Number(parts[2]) : null
+  };
 }
 
-module.exports = { getActiveWindow, minimizeActiveWindow };
+module.exports = { getActiveWindow, minimizeActiveWindow, activateWindow, launchOrActivateApp };
