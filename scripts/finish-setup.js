@@ -111,7 +111,6 @@ async function ensureWebhook() {
   }
   const hook = await stripe('POST', 'webhook_endpoints', {
     url: WEBHOOK_URL,
-    'enabled_events[]': undefined, // placeholder — set below
     ...Object.fromEntries(WEBHOOK_EVENTS.map((e, i) => [`enabled_events[${i}]`, e]))
   });
   console.log(`✓ Created webhook: ${hook.id}`);
@@ -120,18 +119,20 @@ async function ensureWebhook() {
 
 // ---- Vercel CLI ----
 function vercel(args, input) {
-  const r = spawnSync('npx.cmd', ['--yes', 'vercel', ...args], {
+  // shell:true on Windows — Node refuses to spawn .cmd shims (npx.cmd) without it.
+  const win = process.platform === 'win32';
+  const r = spawnSync(win ? 'npx.cmd' : 'npx', ['--yes', 'vercel', ...args], {
     cwd: ROOT,
     input,
     encoding: 'utf8',
-    shell: false
+    shell: win
   });
   return r;
 }
 
 function pushEnv(name, value) {
   vercel(['env', 'rm', name, 'production', '--yes']); // ok if it didn't exist
-  const r = vercel(['env', 'add', name, 'production'], value);
+  const r = vercel(['env', 'add', name, 'production'], value + '\n');
   if (r.status !== 0) throw new Error(`vercel env add ${name} failed:\n${r.stderr || r.stdout}`);
   console.log(`✓ Vercel env set: ${name}`);
 }
