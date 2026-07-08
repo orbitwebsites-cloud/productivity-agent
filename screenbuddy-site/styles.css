@@ -42,9 +42,9 @@ h3{font-size:24px; line-height:1.05; margin:12px 0 10px}
 .status-strip span:nth-child(2){border-color:var(--blue)}
 .status-strip span:nth-child(3){border-color:var(--leaf)}
 .status-strip strong{color:var(--ink)}
-.feature-band,.setup-band{display:grid; grid-template-columns:1fr; gap:28px; padding:72px 0; border-top:1px solid var(--line)}
+.feature-band,.setup-band,.problem-band{display:grid; grid-template-columns:1fr; gap:28px; padding:72px 0; border-top:1px solid var(--line)}
 .feature-grid{display:grid; grid-template-columns:1fr; gap:14px}
-.feature-grid article,.setup-steps article,.support-card{background:rgba(255,255,255,.84); border:1px solid var(--line); border-radius:8px; padding:22px; box-shadow:0 14px 34px rgba(47,39,31,.08)}
+.feature-grid article,.setup-steps article,.problem-list article,.support-card{background:rgba(255,255,255,.84); border:1px solid var(--line); border-radius:8px; padding:22px; box-shadow:0 14px 34px rgba(47,39,31,.08)}
 .num{font-family:ui-sans-serif,system-ui,sans-serif; color:var(--coral); font-weight:900}
 .feature-grid p,.setup-steps span{font-family:ui-sans-serif,system-ui,sans-serif; color:var(--muted); line-height:1.55; margin:0}
 .feature-grid article:nth-child(2) .num{color:var(--blue)}
@@ -54,6 +54,18 @@ h3{font-size:24px; line-height:1.05; margin:12px 0 10px}
 .setup-steps strong{width:44px; height:44px; display:grid; place-items:center; border-radius:8px; background:var(--ink); color:#fff; font-size:18px}
 .setup-steps article:nth-child(2) strong{background:var(--blue)}
 .setup-steps article:nth-child(3) strong{background:var(--coral)}
+.problem-band{align-items:start}
+.problem-copy h2{max-width:13ch}
+.problem-list{display:grid; grid-template-columns:1fr; gap:12px; font-family:ui-sans-serif,system-ui,sans-serif}
+.problem-list article{border-left:5px solid var(--gold)}
+.problem-list article:nth-child(2){border-left-color:var(--blue)}
+.problem-list article:nth-child(3){border-left-color:var(--leaf)}
+.problem-list strong{display:block; font-size:18px; color:var(--ink); margin-bottom:8px}
+.problem-list p{color:var(--muted); line-height:1.55; margin:0}
+.trust-band{display:grid; grid-template-columns:1fr; gap:12px; padding:22px 0 78px; font-family:ui-sans-serif,system-ui,sans-serif}
+.trust-band > div{min-height:128px; display:flex; flex-direction:column; justify-content:space-between; border-top:1px solid var(--line); padding-top:18px}
+.trust-label{font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.12em; color:var(--coral-dark)}
+.trust-band p{color:var(--muted); line-height:1.55; margin:18px 0 0}
 .support{min-height:100vh; display:flex; flex-direction:column}
 .support-card{margin:auto 0; display:grid; grid-template-columns:1fr; gap:24px}
 .support-card h1{font-size:clamp(34px,7vw,64px); max-width:12ch; margin:0 0 18px; line-height:.95}
@@ -71,9 +83,10 @@ h3{font-size:24px; line-height:1.05; margin:12px 0 10px}
   .actions{flex-direction:row; max-width:none}
   .download,.secondary{min-width:184px}
   .status-strip{grid-template-columns:repeat(3,1fr)}
-  .feature-band,.setup-band{grid-template-columns:minmax(0,.9fr) minmax(0,1.2fr); align-items:start}
+  .feature-band,.setup-band,.problem-band{grid-template-columns:minmax(0,.9fr) minmax(0,1.2fr); align-items:start}
   .feature-grid{grid-template-columns:repeat(3,1fr)}
   .setup-steps{align-self:center}
+  .trust-band{grid-template-columns:repeat(3,1fr); gap:24px}
   .support-card{grid-template-columns:170px minmax(0,1fr); padding:34px}
   .support-form{grid-column:2}
 }

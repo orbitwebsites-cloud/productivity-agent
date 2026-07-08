@@ -26,10 +26,16 @@ That inbox must confirm FormSubmit once before messages are delivered.
 
 ## Download Link
 
-The home page currently points to:
+The home page currently points to a static download path:
 
 ```text
-https://github.com/orbitwebsites-cloud/productivity-agent/releases/latest
+/downloads/ScreenBuddy-0.1.0-beta-win-x64.exe
 ```
 
-Because the repo is private, public visitors will not be able to download from that URL until an installer is published to a public release bucket, a public GitHub release repo, or another public download host.
+Before deploying, copy the generated portable build into `screenbuddy-site/downloads/`.
+That folder is ignored by git so the source repo stays light:
+
+```powershell
+New-Item -ItemType Directory -Force -Path screenbuddy-site\downloads
+Copy-Item "dist\ScreenBuddy 0.1.0.exe" "screenbuddy-site\downloads\ScreenBuddy-0.1.0-beta-win-x64.exe"
+```
