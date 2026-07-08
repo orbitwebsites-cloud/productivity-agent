@@ -1,0 +1,79 @@
+:root{
+  --paper: rgba(255,255,255,0.72);
+  --glass: rgba(255,255,255,0.55);
+  --stroke: rgba(60,50,40,0.10);
+  --ink:#2f2b25; --muted:#8a8377; --faint:#b7b0a4;
+  --coral:#c96442; --coral-lt:#e0895f; --sage:#7f9c8c;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{background:transparent; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--ink); user-select:none;}
+
+.card{
+  height:100vh; display:flex; flex-direction:column;
+  background:
+    radial-gradient(600px 300px at 85% -10%, rgba(201,100,66,0.16), transparent 60%),
+    linear-gradient(165deg, rgba(250,247,242,0.92), rgba(243,237,227,0.92));
+  backdrop-filter:blur(24px) saturate(150%); -webkit-backdrop-filter:blur(24px) saturate(150%);
+  border:1px solid var(--stroke); border-radius:22px; overflow:hidden;
+  box-shadow:0 24px 60px -18px rgba(80,60,40,.4);
+}
+
+/* header (draggable) */
+.header{display:flex; align-items:center; gap:11px; padding:14px 14px 10px; -webkit-app-region:drag;}
+.winbtns{margin-left:auto; display:flex; gap:6px; -webkit-app-region:no-drag;}
+.winbtns button{width:22px; height:22px; border:none; border-radius:7px; cursor:pointer;
+  background:rgba(60,50,40,.07); color:var(--muted); font-size:13px; line-height:1;}
+.winbtns button:hover{background:rgba(201,100,66,.15); color:var(--coral);}
+.who .name{font-weight:700; font-size:14px;}
+.who .sub{font-size:11px; color:var(--muted);}
+
+/* Pesto starburst (placeholder — swap for the Manus clay render later) */
+.pesto{position:relative; width:38px; height:38px; flex:none;}
+.pesto .core{position:absolute; inset:7px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #f0b49c, var(--coral) 66%, #b0512f);
+  box-shadow:inset 0 1px 2px rgba(255,255,255,.6); z-index:2;}
+.pesto .ray{position:absolute; left:15px; top:0; width:8px; height:38px; border-radius:4px;
+  background:linear-gradient(var(--coral-lt), var(--coral)); z-index:1;}
+.pesto .ray:nth-child(2){transform:rotate(45deg);}
+.pesto .ray:nth-child(3){transform:rotate(90deg);}
+.pesto .ray:nth-child(4){transform:rotate(135deg);}
+.pesto .eye{position:absolute; top:14px; width:4px; height:5px; border-radius:50%; background:#3a2a22; z-index:3;}
+.pesto .eye.l{left:13px;} .pesto .eye.r{left:21px;}
+.pesto .mouth{position:absolute; top:22px; left:14px; width:9px; height:4px; border-radius:0 0 6px 6px; background:#7a3a24; z-index:3;}
+.pesto.think{animation:tilt 3s ease-in-out infinite;}
+@keyframes tilt{50%{transform:rotate(-6deg)}}
+
+/* today */
+.today{margin:2px 14px 8px; -webkit-app-region:no-drag;}
+.today-h{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:8px;}
+.pursuits{display:flex; flex-direction:column; gap:7px;}
+.prow{display:flex; align-items:center; gap:9px; font-size:12px;}
+.prow .lbl{width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#5c5548;}
+.prow .track{flex:1; height:6px; border-radius:999px; background:rgba(60,50,40,.08); overflow:hidden;}
+.prow .fill{height:100%; border-radius:999px; background:linear-gradient(90deg,var(--coral),var(--coral-lt));}
+.prow .t{width:44px; text-align:right; color:var(--muted); font-size:11px;}
+.empty{font-size:12px; color:var(--faint); padding:4px 0;}
+
+/* chat — block layout so bubbles size to their text and wrap normally */
+.chat{flex:1; overflow-y:auto; padding:6px 14px; -webkit-app-region:no-drag;}
+.msg{display:block; width:fit-content; max-width:88%; margin:0 0 8px; font-size:12.5px;
+  line-height:1.5; padding:9px 12px; border-radius:13px;
+  white-space:pre-wrap; overflow-wrap:break-word; word-break:normal;}
+.msg.pesto{margin-right:auto; background:var(--paper); border:1px solid var(--stroke); color:#3a352d;}
+.msg.me{margin-left:auto; background:linear-gradient(160deg,var(--coral-lt),var(--coral)); color:#fff;}
+.chat::-webkit-scrollbar{width:6px;} .chat::-webkit-scrollbar-thumb{background:rgba(60,50,40,.15); border-radius:3px;}
+
+/* quick chips */
+.quick{display:flex; gap:6px; padding:6px 14px 2px; flex-wrap:wrap; -webkit-app-region:no-drag;}
+.chip{font-size:11px; color:var(--coral); background:rgba(201,100,66,.10); border:1px solid rgba(201,100,66,.22);
+  border-radius:999px; padding:4px 10px; cursor:pointer;}
+.chip:hover{background:rgba(201,100,66,.18);}
+
+/* input */
+.inputbar{display:flex; gap:8px; padding:10px 14px 14px; -webkit-app-region:no-drag;}
+#q{flex:1; border:1px solid var(--stroke); background:rgba(255,255,255,.75); border-radius:12px;
+  padding:9px 12px; font-size:12.5px; color:var(--ink); outline:none;}
+#q::placeholder{color:var(--faint);}
+#send{width:38px; border:none; border-radius:12px; cursor:pointer; color:#fff; font-size:14px;
+  background:linear-gradient(140deg,var(--coral),var(--coral-lt));}
+#send:hover{filter:brightness(1.05);}

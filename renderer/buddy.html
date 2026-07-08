@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pesto</title>
+<link rel="stylesheet" href="buddy.css" />
+</head>
+<body>
+  <div class="card">
+    <!-- drag handle / header -->
+    <div class="header">
+      <div class="pesto" id="pesto" title="Pesto">
+        <div class="ray"></div><div class="ray"></div><div class="ray"></div><div class="ray"></div>
+        <div class="core"><span class="eye l"></span><span class="eye r"></span><span class="mouth"></span></div>
+      </div>
+      <div class="who">
+        <div class="name">Pesto</div>
+        <div class="sub" id="statusline">watching your screen…</div>
+      </div>
+      <div class="winbtns">
+        <button id="hideBtn" title="Hide (Alt+Space)">—</button>
+        <button id="quitBtn" title="Quit">×</button>
+      </div>
+    </div>
+
+    <!-- today by pursuit -->
+    <div class="today" id="today">
+      <div class="today-h">Today · by pursuit</div>
+      <div id="pursuits" class="pursuits"><div class="empty">Nothing tracked yet.</div></div>
+    </div>
+
+    <!-- chat -->
+    <div class="chat" id="chat"></div>
+
+    <!-- quick asks -->
+    <div class="quick">
+      <button class="chip" data-q="What was I working on yesterday?">yesterday?</button>
+      <button class="chip" data-q="How productive was I today?">today?</button>
+      <button class="chip" data-q="How productive was I this week?">this week?</button>
+    </div>
+
+    <!-- input -->
+    <div class="inputbar">
+      <input id="q" type="text" placeholder="Ask Pesto anything…" autocomplete="off" />
+      <button id="send" aria-label="Send">➤</button>
+    </div>
+  </div>
+  <script src="buddy.js"></script>
+</body>
+</html>

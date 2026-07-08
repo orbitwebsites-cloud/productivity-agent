@@ -1,0 +1,7 @@
+{
+  "name": "screenbuddy-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ScreenBuddy hosted backend — Premium AI answers (Vercel serverless, zero dependencies).",
+  "engines": { "node": ">=18" }
+}

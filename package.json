@@ -1,0 +1,40 @@
+{
+  "name": "screenbuddy",
+  "version": "0.1.0",
+  "description": "Pesto — a cute desktop buddy that tracks what you work on and tells you how your day went.",
+  "main": "electron/main.js",
+  "author": "Orbit Boyzz",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.orbitboyzz.screenbuddy",
+    "productName": "ScreenBuddy",
+    "npmRebuild": false,
+    "files": [
+      "electron/**/*",
+      "renderer/**/*",
+      "assets/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    }
+  }
+}

@@ -1,0 +1,10 @@
+.vercel/
+.claude/
+node_modules/
+dist/
+
+.env*
+!.env.template
+
+screenbuddy-config.json
+activity.jsonl

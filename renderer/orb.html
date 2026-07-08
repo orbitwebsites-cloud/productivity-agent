@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Pesto</title>
+<style>
+  html, body { margin:0; height:100%; background:transparent; overflow:hidden;
+    -webkit-user-select:none; user-select:none; cursor:pointer; }
+  #orb { position:absolute; inset:0; display:grid; place-items:center; }
+  #orb img {
+    width:84px; height:84px; object-fit:contain; -webkit-user-drag:none; pointer-events:none;
+    filter: drop-shadow(0 8px 14px rgba(120,60,30,0.35));
+    transition: transform .15s ease, filter .15s ease;
+    animation: bob 3.6s ease-in-out infinite;
+  }
+  #orb:hover img {
+    transform: translateY(-3px) scale(1.10);
+    filter: drop-shadow(0 12px 20px rgba(201,100,66,0.55));
+  }
+  #orb:active img { transform: scale(1.02); }
+  @keyframes bob { 50% { transform: translateY(-4px); } }
+</style>
+</head>
+<body>
+  <div id="orb"><img src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" /></div>
+  <script src="orb.js"></script>
+</body>
+</html>

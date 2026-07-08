@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Warden</title>
+<style>
+  :root{ --coral:#c96442; --coral-lt:#e0895f; --ink:#2f2b25; --muted:#8a8377; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; background:transparent; overflow:hidden; -webkit-user-select:none; user-select:none;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  .wrap{height:100vh; display:grid; place-items:center; -webkit-app-region:drag;}
+  .card{width:380px; text-align:center; padding:22px 24px 20px; border-radius:22px;
+    background:linear-gradient(165deg, rgba(252,249,245,0.96), rgba(244,238,229,0.96));
+    backdrop-filter:blur(26px) saturate(150%);
+    border:1px solid rgba(201,100,66,0.35);
+    box-shadow:0 26px 60px -16px rgba(80,60,40,.55);}
+  .tag{font-size:12px; font-weight:800; letter-spacing:.05em; color:var(--coral); margin-bottom:4px;}
+  .head{font-size:15px; color:var(--ink); font-weight:600; margin-bottom:10px;}
+  .count{font-size:56px; font-weight:800; color:var(--coral); line-height:1; margin:2px 0 4px;}
+  .count small{font-size:22px; font-weight:700;}
+  .hint{font-size:12px; color:var(--muted); margin-top:8px;}
+  .kbd{font-size:11px; border:1px solid rgba(60,50,40,.2); border-radius:6px; padding:1px 6px; background:#fff;}
+  .stay{-webkit-app-region:no-drag; margin-top:14px; border:none; cursor:pointer; border-radius:12px;
+    padding:10px 18px; font-size:13px; font-weight:600; color:#fff;
+    background:linear-gradient(140deg,var(--coral),var(--coral-lt));}
+  .stay:hover{filter:brightness(1.05);}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="tag">🚔 WARDEN · GUARDING YOUR FOCUS</div>
+      <div class="head" id="head">Hiding this in…</div>
+      <div class="count"><span id="n">10</span><small>s</small></div>
+      <div class="hint">press <span class="kbd">ESC</span> to stay on it — I'll back off</div>
+      <button class="stay" id="stay">Stay on it</button>
+    </div>
+  </div>
+  <script src="warden.js"></script>
+</body>
+</html>

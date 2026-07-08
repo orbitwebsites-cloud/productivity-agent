@@ -1,0 +1,12 @@
+.env
+.env.*
+scripts
+node_modules
+dist
+assets
+electron
+renderer
+screenbuddy-site
+*.md
+package-lock.json
+council-*.html

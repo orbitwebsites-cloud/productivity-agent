@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ScreenBuddy</title>
+<link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <section id="setupGate" class="setup-gate" hidden>
+    <div id="setupWelcome" class="setup-panel">
+      <img class="setup-mascot" src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" />
+      <div class="setup-copy">
+        <p class="eyebrow">Welcome</p>
+        <h1>You're all set — Pesto runs right out of the box.</h1>
+        <p class="lead">ScreenBuddy tracks what you work on <b>locally on this computer</b> — no account,
+          no cloud, nothing to install. Smart AI answers are an optional <b>Premium</b> upgrade you can
+          turn on anytime.</p>
+        <div class="setup-list">
+          <div><b>Private activity tracking</b><span>Stays 100% on this machine. No account needed.</span></div>
+          <div><b>Honest daily insights</b><span>Ask Pesto what you worked on and how your day went.</span></div>
+          <div><b>AI answers <em>(Premium)</em></b><span>Natural-language coaching — sign in to unlock later.</span></div>
+        </div>
+        <div class="setup-actions">
+          <button id="installSetup" class="save">Start Pesto</button>
+          <button id="declineSetup" class="ghostsave" hidden>No thanks</button>
+          <button id="openSetupHelp" class="ghostsave" hidden>Open help</button>
+        </div>
+        <div id="setupProgress" class="setup-progress" hidden>
+          <div class="progress-meta">
+            <span id="progressLabel">Getting ready</span>
+            <span id="progressPct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
+        </div>
+        <p id="setupMsg" class="setup-msg"></p>
+      </div>
+    </div>
+
+    <div id="setupSad" class="setup-panel sad-panel" hidden>
+      <div class="sad-mascot-wrap">
+        <img class="setup-mascot sad-mascot" src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Sad Pesto" />
+        <span class="sad-face">:(</span>
+      </div>
+      <div class="setup-copy">
+        <p class="eyebrow">Setup stopped</p>
+        <h1>Then I'm sorry, you can't download Pesto.</h1>
+        <p class="lead">Pesto needs its one-time setup (a quick scan of your installed apps — done locally) to work. Come back whenever you're ready.</p>
+        <div class="setup-actions">
+          <button id="retrySetup" class="save">Let Pesto set up</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="shell">
+    <aside class="side">
+      <div class="brand">
+        <img src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" />
+        <div>
+          <div class="bname">ScreenBuddy</div>
+          <div class="btag">Your productivity companion</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="navitem active" data-page="pursuits">Life Pursuits</button>
+        <button class="navitem" data-page="privacy">Privacy Tiers</button>
+        <button class="navitem" data-page="premium">Premium ✨</button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <section id="page-pursuits" class="page">
+        <h1>Life Pursuits</h1>
+        <p class="lead">Tell Pesto what counts as <b>your</b> work. Time is credited to a pursuit
+          when the app or window title contains any of its keywords.</p>
+
+        <div class="scanrow">
+          <button id="scanApps" class="save">🔍 Scan my PC for apps</button>
+          <span id="scanMsg" class="savemsg"></span>
+        </div>
+
+        <div id="pursuitList" class="plist"></div>
+        <button id="addPursuit" class="ghostbtn">+ Add a pursuit</button>
+
+        <div class="recent">
+          <div class="recent-h">Apps you've used recently - click to add as a keyword</div>
+          <div id="recentApps" class="recent-apps"><span class="empty">Nothing tracked yet.</span></div>
+        </div>
+
+        <div class="saverow">
+          <button id="savePursuits" class="save">Save pursuits</button>
+          <span id="saveMsg" class="savemsg"></span>
+        </div>
+      </section>
+
+      <section id="page-privacy" class="page" hidden>
+        <h1>Privacy Tiers</h1>
+        <p class="lead">Choose how ScreenBuddy handles each app. Unknown apps default to
+          <b>Private</b>. Everything stays on your computer.</p>
+        <div class="tierlegend">
+          <div><b>Full</b><span>App + window title (and, later, screenshots).</span></div>
+          <div><b>Private</b><span>Metadata only: app name + title. No pixels are ever captured.</span></div>
+          <div><b>Off</b><span>Completely invisible to ScreenBuddy.</span></div>
+        </div>
+        <div id="tierList" class="tierlist"></div>
+        <div class="saverow">
+          <button id="saveTiers" class="save">Save privacy</button>
+          <span id="tierMsg" class="savemsg"></span>
+        </div>
+      </section>
+
+      <section id="page-premium" class="page" hidden>
+        <h1>Premium ✨</h1>
+        <p class="lead">Everything you use today stays <b>free and local</b>. Premium adds Pesto's
+          <b>AI answers</b> — natural-language coaching about your day, powered by our servers.
+          Only a tiny text summary is ever sent. Never your screen.</p>
+
+        <div id="premSignedOut" class="agentbox" hidden>
+          <label class="fieldlabel" for="premEmailIn">Email</label>
+          <input id="premEmailIn" class="field" type="email" spellcheck="false" placeholder="you@example.com" />
+          <label class="fieldlabel" for="premPassIn">Password</label>
+          <input id="premPassIn" class="field" type="password" placeholder="At least 6 characters" />
+          <div class="saverow">
+            <button id="premSignIn" class="save">Sign in</button>
+            <button id="premSignUp" class="ghostsave">Create account</button>
+          </div>
+        </div>
+
+        <div id="premSignedIn" class="agentbox" hidden>
+          <div class="prem-status">
+            <span id="premEmail" class="prem-email"></span>
+            <span id="premBadge" class="prem-badge free">Free</span>
+          </div>
+          <p id="premHint" class="hint"></p>
+          <div class="saverow">
+            <button id="premUpgrade" class="save">✨ Upgrade to Premium</button>
+            <button id="premRefresh" class="ghostsave">Refresh status</button>
+            <button id="premSignOutBtn" class="ghostsave">Sign out</button>
+          </div>
+        </div>
+
+        <p id="premMsg" class="savemsg"></p>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

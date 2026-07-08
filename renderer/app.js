@@ -1,0 +1,353 @@
+'use strict';
+
+// Desktop app window: Life Pursuits + Privacy Tiers editors. Scrollable, resizable.
+
+let lastKwField = null;
+let setupReady = false;
+let progressTimer = null;
+let progressValue = 0;
+let lastSetupError = '';
+
+// ---------- first-run setup ----------
+const setupGate = document.getElementById('setupGate');
+const setupWelcome = document.getElementById('setupWelcome');
+const setupSad = document.getElementById('setupSad');
+const shell = document.querySelector('.shell');
+const openHelpBtn = document.getElementById('openSetupHelp');
+
+function setProgress(value, label) {
+  progressValue = Math.max(0, Math.min(100, value));
+  document.getElementById('setupProgress').hidden = false;
+  document.getElementById('progressFill').style.width = `${progressValue}%`;
+  document.getElementById('progressPct').textContent = `${Math.round(progressValue)}%`;
+  if (label) document.getElementById('progressLabel').textContent = label;
+}
+
+function stopProgress() {
+  if (progressTimer) clearInterval(progressTimer);
+  progressTimer = null;
+}
+
+function resetProgress() {
+  stopProgress();
+  progressValue = 0;
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('progressPct').textContent = '0%';
+  document.getElementById('progressLabel').textContent = 'Getting ready';
+  document.getElementById('setupProgress').hidden = true;
+}
+
+function startInstallProgress() {
+  stopProgress();
+  setProgress(4, 'Getting ready');
+  const startedAt = Date.now();
+  progressTimer = setInterval(() => {
+    const elapsed = Date.now() - startedAt;
+    let target;
+    let label;
+    if (elapsed < 2500) {
+      target = 12 + (elapsed / 2500) * 48;
+      label = 'Scanning your PC for apps';
+    } else if (elapsed < 6000) {
+      target = 60 + ((elapsed - 2500) / 3500) * 30;
+      label = 'Building your Life Pursuits';
+    } else {
+      target = 90 + Math.min(7, Math.log1p((elapsed - 6000) / 2000) * 3);
+      label = 'Finishing setup';
+    }
+    const eased = progressValue + (target - progressValue) * 0.22;
+    setProgress(Math.min(eased, 97), label);
+  }, 180);
+}
+
+async function finishProgress() {
+  stopProgress();
+  setProgress(100, 'Ready');
+  await new Promise((resolve) => setTimeout(resolve, 450));
+}
+
+function applySetupState(cfg) {
+  const status = cfg.setup?.status || 'pending';
+  setupReady = status === 'ready';
+  setupGate.hidden = setupReady;
+  shell.hidden = !setupReady;
+  setupWelcome.hidden = status === 'declined';
+  setupSad.hidden = status !== 'declined';
+  const msg = document.getElementById('setupMsg');
+  if (status === 'failed' && cfg.setup?.lastError) {
+    lastSetupError = cfg.setup.lastError;
+    msg.textContent = "I couldn't finish setup. You can try again or open help with the error already filled in.";
+    openHelpBtn.hidden = false;
+  } else if (status === 'installing') {
+    msg.textContent = 'Setting up — scanning your apps. Takes a few seconds.';
+    openHelpBtn.hidden = true;
+  } else {
+    msg.textContent = '';
+    openHelpBtn.hidden = true;
+    if (status !== 'installing') resetProgress();
+  }
+}
+
+async function refreshSetup() {
+  const cfg = await window.buddy.getConfig();
+  applySetupState(cfg);
+  if (setupReady) {
+    await loadPursuits();
+  }
+}
+
+async function installSetup() {
+  const installBtn = document.getElementById('installSetup');
+  const declineBtn = document.getElementById('declineSetup');
+  const msg = document.getElementById('setupMsg');
+  installBtn.disabled = true;
+  declineBtn.disabled = true;
+  openHelpBtn.hidden = true;
+  msg.textContent = 'Scanning your PC for apps and building your Life Pursuits — a few seconds.';
+  startInstallProgress();
+  try {
+    const cfg = await window.buddy.installSetup();
+    await finishProgress();
+    applySetupState(cfg);
+    await loadPursuits();
+  } catch (err) {
+    resetProgress();
+    installBtn.disabled = false;
+    declineBtn.disabled = false;
+    lastSetupError = err.message || String(err);
+    openHelpBtn.hidden = false;
+    msg.textContent = "I couldn't finish setup. Try again, or open help and the error will already be filled in.";
+  }
+}
+
+async function declineSetup() {
+  resetProgress();
+  const cfg = await window.buddy.declineSetup();
+  applySetupState(cfg);
+}
+
+document.getElementById('installSetup').addEventListener('click', installSetup);
+document.getElementById('declineSetup').addEventListener('click', declineSetup);
+openHelpBtn.addEventListener('click', () => window.buddy.openSetupHelp(lastSetupError));
+document.getElementById('retrySetup').addEventListener('click', async () => {
+  setupWelcome.hidden = false;
+  setupSad.hidden = true;
+});
+
+// ---------- nav ----------
+document.querySelectorAll('.navitem').forEach((b) => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.navitem').forEach((x) => x.classList.remove('active'));
+    b.classList.add('active');
+    const page = b.dataset.page;
+    document.getElementById('page-pursuits').hidden = page !== 'pursuits';
+    document.getElementById('page-privacy').hidden = page !== 'privacy';
+    document.getElementById('page-premium').hidden = page !== 'premium';
+    if (page === 'privacy') loadPrivacy();
+    if (page === 'premium') loadPremium();
+  });
+});
+
+// ---------- Life Pursuits ----------
+const pursuitList = document.getElementById('pursuitList');
+
+function pursuitRow(p) {
+  const row = document.createElement('div');
+  row.className = 'prow-edit';
+  const nameVal = (p.emoji ? p.emoji + ' ' : '') + (p.name || '');
+  row.innerHTML = `
+    <div class="top">
+      <input class="name" value="${escapeHtml(nameVal)}" placeholder="Pursuit name (e.g. 🍳 Learn to Cook)" />
+      <button class="del" title="Remove">🗑</button>
+    </div>
+    <input class="kw" value="${escapeHtml((p.keywords || []).join(', '))}" placeholder="keywords, comma separated (e.g. code, github, claude)" />`;
+  row.querySelector('.del').addEventListener('click', () => row.remove());
+  const kw = row.querySelector('.kw');
+  kw.addEventListener('focus', () => { lastKwField = kw; });
+  pursuitList.appendChild(row);
+}
+
+async function loadPursuits() {
+  pursuitList.innerHTML = '';
+  const cfg = await window.buddy.getConfig();
+  (cfg.pursuits || []).forEach(pursuitRow);
+  if (!(cfg.pursuits || []).length) pursuitRow({ name: '', keywords: [] });
+
+  const host = document.getElementById('recentApps');
+  const apps = await window.buddy.recentApps();
+  if (apps && apps.length) {
+    host.innerHTML = '';
+    apps.forEach((a) => {
+      const el = document.createElement('span');
+      el.className = 'app';
+      el.innerHTML = `${escapeHtml(a.app)}<span class="t">${a.label}</span>`;
+      el.addEventListener('click', () => {
+        const field = lastKwField || pursuitList.querySelector('.kw');
+        if (!field) return;
+        const cur = field.value.trim();
+        field.value = cur ? `${cur}, ${a.app}` : a.app;
+        field.focus();
+      });
+      host.appendChild(el);
+    });
+  }
+}
+
+function splitName(raw) {
+  const s = (raw || '').trim();
+  const m = s.match(/^(\p{Emoji}️?)\s*(.*)$/u);
+  return m ? { emoji: m[1], name: m[2].trim() } : { emoji: '', name: s };
+}
+
+async function savePursuits() {
+  const pursuits = [...pursuitList.querySelectorAll('.prow-edit')].map((r) => {
+    const { emoji, name } = splitName(r.querySelector('.name').value);
+    const keywords = r.querySelector('.kw').value.split(',').map((k) => k.trim()).filter(Boolean);
+    return { name, emoji, keywords };
+  }).filter((p) => p.name);
+  await window.buddy.savePursuits(pursuits);
+  flash('saveMsg', 'Saved ✅ Pesto will sort new time into these.');
+}
+
+document.getElementById('addPursuit').addEventListener('click', () => pursuitRow({ name: '', keywords: [] }));
+document.getElementById('savePursuits').addEventListener('click', savePursuits);
+
+// Scan my PC — enumerate installed apps, auto-build pursuits from the knowledge base.
+document.getElementById('scanApps').addEventListener('click', async () => {
+  const btn = document.getElementById('scanApps');
+  const msg = document.getElementById('scanMsg');
+  btn.disabled = true;
+  msg.textContent = 'Scanning your apps…';
+  try {
+    const r = await window.buddy.scanApps();
+    const cats = (r.categories || []).map((c) => `${c.emoji} ${c.name}`).join(', ');
+    msg.textContent = `Scanned ${r.appsScanned} apps · recognized ${r.recognized} · built ${(r.categories || []).length} pursuits${cats ? ' (' + cats + ')' : ''}`;
+    await loadPursuits();
+  } catch (e) {
+    msg.textContent = "Couldn't scan just now.";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ---------- Privacy Tiers ----------
+async function loadPrivacy() {
+  const host = document.getElementById('tierList');
+  const cfg = await window.buddy.getConfig();
+  const tiers = cfg.privacyTiers || {};
+  const apps = (await window.buddy.recentApps()) || [];
+  // union of recently-seen apps and any already-configured apps
+  const names = [...new Set([...apps.map((a) => a.app), ...Object.keys(tiers)])];
+  if (!names.length) { host.innerHTML = '<div class="empty" style="color:var(--faint);font-size:12px">No apps seen yet.</div>'; return; }
+  host.innerHTML = '';
+  names.forEach((appName) => {
+    const cur = tiers[appName] || cfg.defaultTier || 'private';
+    const row = document.createElement('div');
+    row.className = 'tierrow';
+    row.dataset.app = appName;
+    row.innerHTML = `<div class="app">${escapeHtml(appName)}</div>
+      <div class="seg">
+        ${['full', 'private', 'off'].map((t) =>
+          `<button data-t="${t}" class="${t === cur ? 'on' : ''}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}
+      </div>`;
+    row.querySelectorAll('.seg button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        row.querySelectorAll('.seg button').forEach((x) => x.classList.remove('on'));
+        btn.classList.add('on');
+      });
+    });
+    host.appendChild(row);
+  });
+}
+
+async function saveTiers() {
+  const tiers = {};
+  document.querySelectorAll('.tierrow').forEach((row) => {
+    const on = row.querySelector('.seg button.on');
+    if (on) tiers[row.dataset.app] = on.dataset.t;
+  });
+  await window.buddy.saveTiers(tiers);
+  flash('tierMsg', 'Saved ✅');
+}
+document.getElementById('saveTiers').addEventListener('click', saveTiers);
+
+// ---------- Premium ----------
+function renderPremium(s) {
+  const signedOut = document.getElementById('premSignedOut');
+  const signedIn = document.getElementById('premSignedIn');
+  signedOut.hidden = !!s.signedIn;
+  signedIn.hidden = !s.signedIn;
+  if (!s.signedIn) return;
+  document.getElementById('premEmail').textContent = s.email || '';
+  const badge = document.getElementById('premBadge');
+  badge.textContent = s.premium ? '✨ Premium' : 'Free';
+  badge.className = `prem-badge ${s.premium ? 'premium' : 'free'}`;
+  document.getElementById('premUpgrade').hidden = !!s.premium;
+  document.getElementById('premHint').textContent = s.premium
+    ? 'AI answers are on — ask Pesto anything in the widget (Alt+Space).'
+    : s.error
+      ? `Signed in, but I couldn't reach the Premium server: ${s.error}`
+      : 'Upgrade to unlock AI answers. Payment opens in your browser.';
+}
+
+async function loadPremium() {
+  try {
+    renderPremium(await window.buddy.premiumStatus());
+  } catch {
+    renderPremium({ signedIn: false });
+  }
+}
+
+async function premAuth(kind) {
+  const email = document.getElementById('premEmailIn').value.trim();
+  const password = document.getElementById('premPassIn').value;
+  const msg = document.getElementById('premMsg');
+  if (!email || !password) { msg.textContent = 'Enter your email and a password.'; return; }
+  msg.textContent = kind === 'signup' ? 'Creating your account…' : 'Signing in…';
+  try {
+    const s = kind === 'signup'
+      ? await window.buddy.premiumSignUp(email, password)
+      : await window.buddy.premiumSignIn(email, password);
+    if (s.needsEmailConfirm) {
+      msg.textContent = `Almost there — check ${s.email} for a confirmation link, then sign in.`;
+      return;
+    }
+    msg.textContent = '';
+    renderPremium(s);
+  } catch (err) {
+    msg.textContent = `Hmm: ${err.message || err}`;
+  }
+}
+
+document.getElementById('premSignIn').addEventListener('click', () => premAuth('signin'));
+document.getElementById('premSignUp').addEventListener('click', () => premAuth('signup'));
+document.getElementById('premPassIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') premAuth('signin'); });
+document.getElementById('premSignOutBtn').addEventListener('click', async () => {
+  renderPremium(await window.buddy.premiumSignOut());
+});
+document.getElementById('premRefresh').addEventListener('click', loadPremium);
+document.getElementById('premUpgrade').addEventListener('click', async () => {
+  const msg = document.getElementById('premMsg');
+  msg.textContent = 'Opening checkout in your browser…';
+  try {
+    const r = await window.buddy.premiumUpgrade();
+    msg.textContent = r.alreadyPremium
+      ? "You're already Premium! 🎉"
+      : 'Finish payment in the browser, then hit “Refresh status”.';
+    if (r.alreadyPremium) loadPremium();
+  } catch (err) {
+    msg.textContent = `Couldn't start checkout: ${err.message || err}`;
+  }
+});
+
+// ---------- helpers ----------
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function flash(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  setTimeout(() => { el.textContent = ''; }, 4000);
+}
+
+refreshSetup();

@@ -1,0 +1,104 @@
+'use strict';
+
+const { app } = require('electron');
+const fs = require('fs');
+const path = require('path');
+
+// Settings live in the OS-standard userData dir so they survive app updates.
+const CONFIG_PATH = path.join(app.getPath('userData'), 'screenbuddy-config.json');
+
+const DEFAULTS = {
+  // How often (ms) we sample the active window. Each sample is credited this much time.
+  trackIntervalMs: 5000,
+
+  // Master switch — tracking can be paused without quitting.
+  trackingEnabled: true,
+
+  setup: {
+    status: 'pending',
+    lastError: '',
+    completedAt: null,
+    supportUrl: 'https://support.orbitboyzz.me/'
+  },
+
+  // The user's "Life Pursuits" — what THEY define as their work/goals.
+  // A window counts toward a pursuit if its app or title matches any keyword.
+  // (Keywords are matched case-insensitively as substrings.)
+  pursuits: [
+    { name: 'Tech Job', emoji: '💻', keywords: ['code', 'visual studio', 'github', 'terminal', 'iterm', 'localhost', 'stack overflow', 'docs'] },
+    { name: 'Learn to Cook', emoji: '🍳', keywords: ['recipe', 'cooking', 'allrecipes', 'serious eats', 'knife skills'] },
+    { name: 'Fitness', emoji: '🏋️', keywords: ['workout', 'strava', 'fitness', 'meal plan'] }
+  ],
+
+  // Titles/apps that are treated as distractions (never productive, no pursuit).
+  distractions: ['youtube', 'netflix', 'tiktok', 'instagram', 'twitter', 'x.com', 'reddit', 'twitch', 'discord'],
+
+  // Per-app privacy tier. 'full' = titles + (later) screenshots, 'private' = metadata only,
+  // 'off' = ignored entirely. Unknown apps default to 'private' (privacy-by-default).
+  // For v1 (metadata-only) 'full' and 'private' behave the same; the tier gates future screenshots.
+  privacyTiers: {},
+  defaultTier: 'private',
+
+  // Accountability intensity. words-only for v1: chill | nudge | drill. (warden = later)
+  mode: 'nudge',
+
+  // Premium — hosted AI. Sign in (Supabase) + subscription (Stripe) unlock
+  // natural-language answers from our backend. Only tiny text summaries are
+  // ever sent; the anon key below is publishable by design.
+  premium: {
+    backendUrl: 'https://screenbuddy-backend.vercel.app',
+    supabaseUrl: 'https://vipextcidorcauhlviig.supabase.co',
+    supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpcGV4dGNpZG9yY2F1aGx2aWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1MjI4MjAsImV4cCI6MjA5OTA5ODgyMH0.SEpeAbTs-hvLXpR-t-POq8rwmL5pjG4LimHKnD5PDUM',
+    session: null
+  },
+
+  // Which AI layer phrases chat answers. 'backend' = hosted Premium (default);
+  // local providers remain as a power-user path. Deterministic local summaries
+  // are always the fallback, so the widget works offline and signed-out.
+  provider: 'backend',
+  hermes: {
+    baseUrl: 'http://127.0.0.1:8642/v1',
+    apiKey: 'change-me-local-dev',
+    model: 'hermes-agent',
+    sessionKey: 'screenbuddy-pesto'
+  },
+  ollama: {
+    baseUrl: 'http://127.0.0.1:11434',
+    model: 'llama3.2'
+  },
+  openaiCompat: {
+    baseUrl: 'https://api.openai.com/v1',
+    apiKey: '',
+    model: 'gpt-4o-mini'
+  }
+};
+
+function deepMerge(base, override) {
+  const out = Array.isArray(base) ? [...base] : { ...base };
+  for (const key of Object.keys(override || {})) {
+    const bv = base ? base[key] : undefined;
+    const ov = override[key];
+    if (ov && typeof ov === 'object' && !Array.isArray(ov) && bv && typeof bv === 'object') {
+      out[key] = deepMerge(bv, ov);
+    } else {
+      out[key] = ov;
+    }
+  }
+  return out;
+}
+
+function loadConfig() {
+  try {
+    return deepMerge(DEFAULTS, JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')));
+  } catch {
+    return { ...DEFAULTS };
+  }
+}
+
+function saveConfig(patch) {
+  const next = deepMerge(loadConfig(), patch);
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(next, null, 2), 'utf8');
+  return next;
+}
+
+module.exports = { loadConfig, saveConfig, DEFAULTS, CONFIG_PATH };
