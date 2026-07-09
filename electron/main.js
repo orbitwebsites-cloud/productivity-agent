@@ -103,6 +103,7 @@ function showApp() {
     width: 880, height: 620, minWidth: 680, minHeight: 480,
     title: 'ScreenBuddy',
     backgroundColor: '#faf7f2',
+    icon: IDLE_PNG,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
   });
   appWin.setMenuBarVisibility(false);
@@ -149,6 +150,8 @@ function trayMenu() {
       }))
     },
     { label: 'Pause / resume tracking', click: () => saveConfig({ trackingEnabled: !loadConfig().trackingEnabled }) },
+    { type: 'separator' },
+    { label: 'Visit our website', click: () => shell.openExternal('https://screenbudy.orbitboyzz.me/') },
     { type: 'separator' },
     { label: 'Quit ScreenBuddy', click: () => app.quit() }
   ]);
@@ -439,7 +442,7 @@ ipcMain.handle('buddy:declineSetup', (event) => {
 ipcMain.handle('buddy:openSetupHelp', async (event, errorText) => {
   requireAppWindow(event);
   const cfg = loadConfig();
-  const base = cfg.setup?.supportUrl || 'https://screenbuddy.app/support/setup';
+  const base = cfg.setup?.supportUrl || 'https://support.orbitboyzz.me/';
   const url = new URL(base);
   url.searchParams.set('product', 'ScreenBuddy');
   url.searchParams.set('screen', 'first-run-setup');
@@ -550,6 +553,7 @@ ipcMain.handle('buddy:scanApps', async (event) => {
   return buildProfileFromScan(false);
 });
 ipcMain.handle('buddy:openApp', () => showApp());
+ipcMain.handle('buddy:openSite', () => shell.openExternal('https://screenbudy.orbitboyzz.me/'));
 
 // ---- Premium (hosted AI: Supabase auth + Stripe sub) ----
 ipcMain.handle('premium:status', () => premium.status());

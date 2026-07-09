@@ -3,6 +3,7 @@
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { findPowerShell } = require('./pwsh');
 
 // Scans the PC for INSTALLED applications (no native modules).
 // Windows: registry uninstall keys (HKLM + HKCU, 32/64-bit).
@@ -37,7 +38,7 @@ async function getInstalledApps() {
     if (process.platform === 'win32') {
       const script = path.join(require('electron').app.getPath('temp'), 'screenbuddy-appscan.ps1');
       fs.writeFileSync(script, WIN_PS, 'utf8');
-      const out = await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', script]);
+      const out = await run(findPowerShell(), ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', script]);
       return dedupe(out.split(/\r?\n/));
     }
     if (process.platform === 'darwin') {

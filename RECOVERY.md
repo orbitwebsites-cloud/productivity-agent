@@ -30,17 +30,28 @@
   refresh, checkout, /api/ask). Provider `backend` is the default; deterministic answers remain
   the offline/signed-out fallback. Premium page = sign in/up, status badge, Upgrade button.
 
-### ⚠️ REMAINING MANUAL STEPS (needs the user's secret keys — never in chat)
-In Vercel → `screenbuddy-backend` → Settings → Environment Variables, add (then **Redeploy**):
-1. `SUPABASE_SERVICE_ROLE_KEY` — Supabase dashboard → screenbuddy → Settings → API keys.
-   (`SUPABASE_URL` is already set.)
-2. `ANTHROPIC_API_KEY` — the user's LLM key. (Optional `ANTHROPIC_MODEL`, default claude-sonnet-5.)
-3. `STRIPE_SECRET_KEY` — Stripe dashboard → Developers → API keys.
-4. `STRIPE_PRICE_ID` — create Product "ScreenBuddy Premium" + recurring price → copy `price_...`.
-5. `STRIPE_WEBHOOK_SECRET` — Stripe → Webhooks → add endpoint
-   `https://screenbuddy-backend.vercel.app/api/stripe-webhook` with events
-   `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`.
-Optional: Supabase → Auth → disable "Confirm email" for frictionless sign-up.
+### ✅ Premium fully wired + LIVE — done 2026-07-08
+User's own Supabase project **`screenbud`** (`bmqhokhibnjdiwvycfxw`, us-west-2) is now the one
+in use — NOT the `screenbuddy` project I auto-provisioned earlier (that one is unused/orphaned,
+safe to ignore or delete later). `subscriptions` table + RLS applied there too.
+`electron/config.js` `premium.supabaseUrl`/`supabaseAnonKey` point at `screenbud`.
+
+Ran `node scripts\finish-setup.js` with the user's real keys (from a local `.env`, gitignored):
+- Stripe is **LIVE mode** (`sk_live_...`) — real product "ScreenBuddy Premium" ($4.99/mo,
+  `price_1Tr4seQzCV0z4lhmTOacFD2C`), real webhook, real charges on Upgrade. Not test mode.
+- LLM = Cerebras (`LLM_API_KEY` set).
+- All 6 secrets pushed to Vercel prod env, backend redeployed. Verified: `/api/me` and
+  `/api/checkout` both return 401 for a bad token (correct — proves the Supabase service-role
+  wiring works end to end).
+- Installer rebuilt with the corrected Supabase URL/key baked into the default config.
+
+⚠️ **Security note (told the user):** the keys were shared via a plaintext file in
+`C:\Users\rrus3\OneDrive\Documents\sd.txt` — that's a OneDrive-synced folder, so the live
+Stripe secret key + Supabase service-role key are sitting in cloud sync in plaintext. Worth
+deleting that file (or moving it out of OneDrive) once confirmed the `.env` copy is good.
+
+Optional nice-to-have: Supabase → `screenbud` → Auth → disable "Confirm email" for
+frictionless sign-up (currently requires clicking an email link before first sign-in).
 
 ## Files
 - Local app: `electron/{main,tracker,activewin,accountability,db,classify,answers,capture,

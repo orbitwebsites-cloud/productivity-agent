@@ -1,4 +1,7 @@
 {
   "installCommand": "",
-  "buildCommand": ""
+  "buildCommand": "",
+  "rewrites": [
+    { "source": "/", "destination": "/api" }
+  ]
 }

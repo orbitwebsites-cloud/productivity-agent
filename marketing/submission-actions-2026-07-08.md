@@ -2,10 +2,24 @@
 
 ScreenBuddy is not ready for blind hackathon/Product Hunt submission until these are true:
 
-- Public download works for people who are not inside the private GitHub repo.
-- 45-60 second demo video exists.
-- Screenshots exist for widget, Jarvis settings, Warden overlay, and setup flow.
-- Hermes model setup limitation is described clearly.
+- [x] Public download works for people who are not inside the private GitHub repo. Verified
+  2026-07-08: https://screenbuddy-site.vercel.app/downloads/ScreenBuddy-0.1.0-beta-win-x64.exe
+  returns 200, latest build (Pesto icon, hosted Premium backend). Custom domain
+  `screenbudy.orbitboyzz.me` is attached in Vercel but not yet resolving via DNS — the raw
+  `.vercel.app` URL works today regardless.
+- [x] Privacy FAQ added to the site (2026-07-08) — covers screen recording, local storage,
+  what Premium sends, work-laptop guidance.
+- [ ] 45-60 second demo video exists. NOT DONE — no screen-recording tool available in this
+  session; needs to be recorded manually (script is below, unchanged).
+- [ ] Screenshots exist for widget, Jarvis settings, Warden overlay, and setup flow. NOT DONE —
+  attempted via automated tooling 2026-07-08 but the running app isn't a registered Start Menu
+  app so the sandboxed screenshot tool couldn't get permission to view it, and a full-desktop
+  screenshot workaround was abandoned after it captured unrelated content from another window on
+  the primary monitor (immediately deleted, not saved anywhere). Take these manually, or grant
+  screen-capture access to the packaged exe once it's installed/registered.
+- ~~Hermes model setup limitation is described clearly.~~ STALE as of 2026-07-08 — Hermes is no
+  longer the AI path. Replaced by the hosted Premium backend (Supabase auth + Stripe + Cerebras
+  LLM, see RECOVERY.md). No local model setup exists anymore; delete this requirement.
 
 ## Highest-Fit Hackathons
 

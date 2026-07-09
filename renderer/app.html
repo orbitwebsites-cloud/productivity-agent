@@ -12,15 +12,17 @@
       <img class="setup-mascot" src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" />
       <div class="setup-copy">
         <p class="eyebrow">Welcome</p>
-        <h1>To run Pesto, we need to set up two local helpers.</h1>
-        <p class="lead">ScreenBuddy can do this for you. It installs the local Hermes AI helper, scans your installed apps to build Life Pursuits, then starts Pesto. No terminal needed.</p>
+        <h1>You're all set — Pesto runs right out of the box.</h1>
+        <p class="lead">ScreenBuddy tracks what you work on <b>locally on this computer</b> — no account,
+          no cloud, nothing to install. Smart AI answers are an optional <b>Premium</b> upgrade you can
+          turn on anytime.</p>
         <div class="setup-list">
-          <div><b>Hermes local AI</b><span>Lets Pesto answer questions from this computer without you opening a terminal.</span></div>
-          <div><b>Local app scan</b><span>Builds starter pursuits from apps already on your PC.</span></div>
-          <div><b>Private activity tracking</b><span>App names and window titles stay on this machine.</span></div>
+          <div><b>Private activity tracking</b><span>Stays 100% on this machine. No account needed.</span></div>
+          <div><b>Honest daily insights</b><span>Ask Pesto what you worked on and how your day went.</span></div>
+          <div><b>AI answers <em>(Premium)</em></b><span>Natural-language coaching — sign in to unlock later.</span></div>
         </div>
         <div class="setup-actions">
-          <button id="installSetup" class="save">Yes, set up Pesto</button>
+          <button id="installSetup" class="save">Start Pesto</button>
           <button id="declineSetup" class="ghostsave">No thanks</button>
           <button id="openSetupHelp" class="ghostsave" hidden>Open help</button>
         </div>
@@ -45,7 +47,7 @@
       <div class="setup-copy">
         <p class="eyebrow">Setup stopped</p>
         <h1>Then I'm sorry, you can't download Pesto.</h1>
-        <p class="lead">Pesto needs Hermes and the local app scan before it can answer questions and guard your focus. Come back whenever you're ready.</p>
+        <p class="lead">Pesto needs its one-time setup (a quick scan of your installed apps — done locally) to work. Come back whenever you're ready.</p>
         <div class="setup-actions">
           <button id="retrySetup" class="save">Let Pesto set up</button>
         </div>
@@ -68,10 +70,11 @@
         <button class="navitem" data-page="jarvis">Jarvis Mode</button>
         <button class="navitem" data-page="premium">Premium ✨</button>
       </nav>
+      <button id="visitSite" class="ghostbtn" style="margin-top:auto">🌐 Visit our website</button>
     </aside>
 
     <main class="main">
-      <section id="page-pursuits" class="page">
+      <section id="page-pursuits" class="page active">
         <h1>Life Pursuits</h1>
         <p class="lead">Tell Pesto what counts as <b>your</b> work. Time is credited to a pursuit
           when the app or window title contains any of its keywords.</p>

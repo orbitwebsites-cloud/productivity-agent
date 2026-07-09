@@ -39,7 +39,7 @@ function loadEnvFile() {
 }
 
 const env = loadEnvFile();
-const need = ['STRIPE_SECRET_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'ANTHROPIC_API_KEY'];
+const need = ['STRIPE_SECRET_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'LLM_API_KEY'];
 const missing = need.filter((k) => !env[k] || env[k].includes('paste-'));
 if (missing.length) {
   console.error(`\n.env is missing: ${missing.join(', ')}`);
@@ -111,8 +111,7 @@ async function ensureWebhook() {
   }
   const hook = await stripe('POST', 'webhook_endpoints', {
     url: WEBHOOK_URL,
-    'enabled_events[]': undefined, // placeholder — set below
-    ...Object.fromEntries(WEBHOOK_EVENTS.map((e, i) => [`enabled_events[${i}]`, e]))
+    enabled_events: WEBHOOK_EVENTS
   });
   console.log(`✓ Created webhook: ${hook.id}`);
   return hook.secret;
@@ -120,11 +119,11 @@ async function ensureWebhook() {
 
 // ---- Vercel CLI ----
 function vercel(args, input) {
-  const r = spawnSync('npx.cmd', ['--yes', 'vercel', ...args], {
+  const r = spawnSync('npx', ['--yes', 'vercel', ...args], {
     cwd: ROOT,
     input,
     encoding: 'utf8',
-    shell: false
+    shell: true
   });
   return r;
 }
@@ -132,7 +131,10 @@ function vercel(args, input) {
 function pushEnv(name, value) {
   vercel(['env', 'rm', name, 'production', '--yes']); // ok if it didn't exist
   const r = vercel(['env', 'add', name, 'production'], value);
-  if (r.status !== 0) throw new Error(`vercel env add ${name} failed:\n${r.stderr || r.stdout}`);
+  if (r.status !== 0) {
+    const detail = r.error ? r.error.message : (r.stderr || r.stdout || 'unknown error');
+    throw new Error(`vercel env add ${name} failed:\n${detail}`);
+  }
   console.log(`✓ Vercel env set: ${name}`);
 }
 
@@ -142,9 +144,11 @@ function pushEnv(name, value) {
   const webhookSecret = await ensureWebhook();
 
   console.log('\n— Pushing env vars to Vercel —');
+  if (env.SUPABASE_URL) pushEnv('SUPABASE_URL', env.SUPABASE_URL);
   pushEnv('SUPABASE_SERVICE_ROLE_KEY', env.SUPABASE_SERVICE_ROLE_KEY);
-  pushEnv('ANTHROPIC_API_KEY', env.ANTHROPIC_API_KEY);
-  if (env.ANTHROPIC_MODEL) pushEnv('ANTHROPIC_MODEL', env.ANTHROPIC_MODEL);
+  pushEnv('LLM_API_KEY', env.LLM_API_KEY);
+  if (env.LLM_BASE_URL) pushEnv('LLM_BASE_URL', env.LLM_BASE_URL);
+  if (env.LLM_MODEL) pushEnv('LLM_MODEL', env.LLM_MODEL);
   pushEnv('STRIPE_SECRET_KEY', env.STRIPE_SECRET_KEY);
   pushEnv('STRIPE_PRICE_ID', priceId);
   pushEnv('STRIPE_WEBHOOK_SECRET', webhookSecret);

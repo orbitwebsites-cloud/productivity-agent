@@ -60,8 +60,8 @@ const DEFAULTS = {
   // ever sent; the anon key below is publishable by design.
   premium: {
     backendUrl: 'https://screenbuddy-backend.vercel.app',
-    supabaseUrl: 'https://vipextcidorcauhlviig.supabase.co',
-    supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpcGV4dGNpZG9yY2F1aGx2aWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1MjI4MjAsImV4cCI6MjA5OTA5ODgyMH0.SEpeAbTs-hvLXpR-t-POq8rwmL5pjG4LimHKnD5PDUM',
+    supabaseUrl: 'https://bmqhokhibnjdiwvycfxw.supabase.co',
+    supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtcWhva2hpYm5qZGl3dnljZnh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NDM2ODksImV4cCI6MjA5OTExOTY4OX0.J7JQM2YyQIk5O9e6H2a4MPUUSwFgR9u8L7ELdo06kUs',
     session: null
   },
 

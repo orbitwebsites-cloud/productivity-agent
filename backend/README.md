@@ -17,8 +17,9 @@ call the LLM with **our** key → return the answer. Zero npm dependencies.
 |---|---|
 | `SUPABASE_URL` | `https://vipextcidorcauhlviig.supabase.co` (the `screenbuddy` project) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase dashboard → Project Settings → API keys → `service_role` (secret!) |
-| `ANTHROPIC_API_KEY` | Your Anthropic key — server-side only, never ships in the app |
-| `ANTHROPIC_MODEL` | optional, default `claude-sonnet-5` |
+| `LLM_API_KEY` | Free-tier key — server-side only, never ships in the app. Default provider is **Cerebras** (cloud.cerebras.ai, free, no card, 1M tokens/day). |
+| `LLM_BASE_URL` | optional, default `https://api.cerebras.ai/v1` — any OpenAI-compatible `/chat/completions` endpoint (Groq, Gemini, OpenRouter, ...) |
+| `LLM_MODEL` | optional, default `llama-3.3-70b` |
 | `STRIPE_SECRET_KEY` | Stripe dashboard → Developers → API keys |
 | `STRIPE_PRICE_ID` | Create a Product ("ScreenBuddy Premium") + recurring Price in Stripe → copy `price_...` |
 | `STRIPE_WEBHOOK_SECRET` | Stripe → Developers → Webhooks → Add endpoint `https://<your-vercel-domain>/api/stripe-webhook`, events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` → copy `whsec_...` |

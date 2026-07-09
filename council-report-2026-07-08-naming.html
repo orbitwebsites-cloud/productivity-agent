@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Council — Rename to Pesto?</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --card: #ffffff; --ink: #1c1c1e; --muted: #6b6b70;
+    --line: #e6e6e3; --accent: #4f46e5; --warn: #b45309; --good: #15803d;
+    --contra: #dc2626; --first: #7c3aed; --expand: #0891b2; --outside: #ca8a04; --exec: #16a34a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.55; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+  .q { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin-bottom: 28px; font-size: 15px; }
+  .q b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); margin-bottom: 6px; }
+  h2 { font-size: 18px; margin: 34px 0 12px; letter-spacing: -0.01em; }
+  .verdict { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 4px 22px 10px; }
+  .verdict h3 { font-size: 15px; margin: 20px 0 6px; }
+  .verdict h3 .tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+    margin-left: 8px; vertical-align: middle; }
+  .agree { background: #dcfce7; color: var(--good); }
+  .clash { background: #fee2e2; color: var(--contra); }
+  .blind { background: #fef3c7; color: var(--warn); }
+  .rec { background: #e0e7ff; color: var(--accent); }
+  ul { margin: 6px 0 14px; padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  .first-step { background: var(--accent); color: #fff; border-radius: 12px; padding: 20px 22px;
+    margin-top: 22px; }
+  .first-step b { display:block; font-size: 12px; text-transform: uppercase; letter-spacing:.08em;
+    opacity:.85; margin-bottom: 6px; }
+  .first-step p { margin: 0; font-size: 16px; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 8px 0 4px; }
+  .row { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; display: grid; grid-template-columns: 130px 1fr; gap: 12px; align-items: start; }
+  .row .name { font-weight: 700; font-size: 13px; }
+  .row .pos { font-size: 13px; color: var(--muted); }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 10px; }
+  summary { cursor: pointer; font-weight: 600; font-size: 14px; outline: none; }
+  summary .who { font-size: 12px; color: var(--muted); font-weight: 500; margin-left: 8px; }
+  details p { font-size: 14px; color: #2c2c2e; }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 40px; text-align: center; }
+  .scale { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .chip { font-size:12px; padding:4px 10px; border-radius:999px; border:1px solid var(--line);
+    background:var(--card); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧑‍⚖️ LLM Council Verdict — Rename to Pesto?</h1>
+  <div class="sub">5 advisors · 5 peer reviews · 1 chairman synthesis · 2026-07-08</div>
+
+  <div class="q">
+    <b>The Question</b>
+    Should the product be renamed from "ScreenBuddy" to "Pesto," or stay "ScreenBuddy" (with
+    Pesto remaining just the mascot character's name, as it is today)? Weighed against roughly
+    six pieces of already-live infrastructure named "screenbuddy" — a real, live Stripe
+    subscription product, two Supabase projects, the Vercel backend, the app's appId/local
+    config file, the marketing site, and a hardcoded support domain — with a self-imposed
+    2-day launch deadline.
+  </div>
+
+  <h2>Where advisors landed</h2>
+  <div class="grid">
+    <div class="row"><div class="name"><span class="dot" style="background:var(--expand)"></span>Expansionist</div><div class="pos"><b>Rename to Pesto.</b> Zero customers, two-day-old infra — this is the cheapest a rename will ever be. "ScreenBuddy" is a category description, not a brand. <i>(Flagged by every peer review as the universal blind spot.)</i></div></div>
+    <div class="row"><div class="name"><span class="dot" style="background:var(--contra)"></span>Contrarian</div><div class="pos"><b>Keep ScreenBuddy.</b> You don't renovate the foundation two days before the open house. Rename touches a live Stripe product, orphans local config, and Pesto isn't even domain/trademark-checked.</div></div>
+    <div class="row"><div class="name"><span class="dot" style="background:var(--exec)"></span>Executor</div><div class="pos"><b>Hybrid.</b> Zero backend changes — front-load Pesto in every not-yet-shipped user-facing surface (site headline, onboarding, README). Full infra rename later, as a deliberate v2, if Pesto earns its keep.</div></div>
+    <div class="row"><div class="name"><span class="dot" style="background:var(--first)"></span>First Principles</div><div class="pos"><b>Hybrid.</b> This is a taste preference dressed as strategy — no A/B test, no data. Burden of proof is on the side proposing change, and it hasn't been met in 2 days.</div></div>
+    <div class="row"><div class="name"><span class="dot" style="background:var(--outside)"></span>Outsider</div><div class="pos"><b>Keep ScreenBuddy.</b> "ScreenBuddy" tells me what it does in two seconds; "Pesto" makes me Google it and find a pasta sauce — wrong instinct for an app requesting screen access.</div></div>
+  </div>
+  <div class="scale">
+    <span class="chip">⚖️ Split 2 keep · 2 hybrid · 1 rename</span>
+    <span class="chip">🟢 5 of 5: infra rename is genuinely risky, not trivial</span>
+    <span class="chip">🔴 Unanimous blind spot: Expansionist (A)</span>
+    <span class="chip">🟡 5 of 5: nobody checked pesto.app / trademark collision</span>
+  </div>
+
+  <h2>Chairman's Verdict</h2>
+  <div class="verdict">
+    <h3>Decision <span class="tag rec">Hybrid</span></h3>
+    <p>Keep <b>ScreenBuddy</b> as the shipped product/legal name. Lead marketing and user-facing
+    voice with <b>Pesto</b> as the character brand — the way Mailchimp's chimp isn't the
+    company name.</p>
+
+    <h3>Why <span class="tag agree">reasoning</span></h3>
+    <ul>
+      <li>Renaming touches at least six live or half-live systems in the next 48 hours: an
+      <code>sk_live_</code> Stripe product, an appId tied to a local config file with
+      <b>no migration written</b>, two Supabase projects, a Vercel backend URL, and a hardcoded
+      support domain — while the git log shows a public beta launch already queued. That's a
+      distributed-systems migration dressed as a find-and-replace.</li>
+      <li>"Zero customers so it's a 30-second edit" (the Expansionist's core claim) isn't
+      credible — the prompt explicitly states the config change orphans existing installs
+      without a migration, and a portable <code>.exe</code> is already built.</li>
+      <li>Against that concrete, deadline-incompatible cost, the case for Pesto is pure taste
+      with <b>no data</b> behind it — no domain check, no trademark check, no user test. The
+      burden of proof sits on the side proposing change, and it hasn't met that burden in a
+      2-day window.</li>
+      <li>But the brand critique isn't wrong — ScreenBuddy is generic, Pesto is the more
+      distinctive, ownable asset, and it's already fully built (dialogue, art, personality) and
+      completely decoupled from the risky infrastructure. The README already half-encodes this
+      hybrid today: "ScreenBuddy (Pesto) — v1."</li>
+    </ul>
+
+    <h3>Blind Spots the Peer Review Caught <span class="tag blind">emergent</span></h3>
+    <ul>
+      <li><b>Nobody checked the checkable unknowns.</b> Every reviewer, across all 5 rounds,
+      flagged that nobody spent the 15-30 minutes to check pesto.app/.com domain availability
+      or the trademark/collision risk with the existing "Pesto" dev tool — cheap, fast, and
+      would have resolved half the debate with data instead of narrative.</li>
+      <li><b>The hybrid path has a hidden cost nobody weighed.</b> Shipping "Meet Pesto"
+      marketing copy while the installer, appId, and billing descriptor still say ScreenBuddy
+      creates a customer-facing inconsistency right at first install / first charge — the exact
+      moment trust matters most.</li>
+      <li><b>"The infrastructure" isn't one risk tier.</b> Stripe (real billing, real card
+      statements) is categorically higher-stakes than Supabase/Vercel project names (purely
+      cosmetic, freely renameable). No advisor separated these.</li>
+      <li><b>Nobody verified the actual Stripe mechanics.</b> Product display names are
+      typically just metadata, separate from the billing descriptor — meaning both "30-second
+      edit" and "touching a live payment system" may be overstating or understating the real
+      risk without anyone checking.</li>
+      <li>No advisor proposed a concrete <b>trigger condition</b> for revisiting later (e.g.
+      "at 1,000 users" or "if a churn survey mentions confusion") — "revisit later" was left as
+      a platitude that could recreate the same debate in six months.</li>
+    </ul>
+
+    <h3>The Recommendation <span class="tag rec">do this</span></h3>
+    <ul>
+      <li>Make <b>zero backend/infra changes</b> today. Keep package.json, appId, the local
+      config file, the live Stripe product, both Supabase projects, and the Vercel backend
+      exactly as "ScreenBuddy."</li>
+      <li>Front-load <b>Pesto</b> in every not-yet-shipped user-facing surface: marketing site
+      headline/hero ("Meet Pesto, your screen buddy"), onboarding flow, tray tooltip framing,
+      README lead.</li>
+      <li>In parallel, spend 15-30 minutes checking pesto.app/.com domain availability and the
+      competing "Pesto" dev tool's collision severity — so a future full rename, if it happens,
+      is data-backed rather than vibes-backed.</li>
+    </ul>
+  </div>
+
+  <div class="first-step">
+    <b>The one thing to do first</b>
+    <p>Today: change zero backend/infra. Update only marketing-site headline, onboarding copy,
+    tray framing, and README to foreground "Pesto" as the character brand while ScreenBuddy
+    stays the technical name underneath. Run the 15-minute domain/trademark check in parallel —
+    that's the one piece of missing information that would actually de-risk any future decision
+    to go further.</p>
+  </div>
+
+  <h2>Full advisor responses</h2>
+  <details><summary>The Expansionist <span class="who">— rename_to_pesto</span></summary>
+    <p>Every dollar of "already-live infrastructure" you listed is trivially cheap to fix — a Vercel project rename, an appId string, a Stripe product name edit — because it's two days old with zero customers. The Stripe product literally has no subscribers yet; renaming it is a 30-second dashboard edit, not a migration. That's the entire cost side of the ledger. On the value side: you already built a mascot with personality, dialogue, and asset infrastructure, and you're about to spend your public beta launch — the one moment you get people's attention before they form a habit — reinforcing "ScreenBuddy," a name so generic it's functionally a category description, not a brand. "Screen buddy" is what a UX writer types into a placeholder before the real name gets decided. You cannot build a cult product, a devoted community, merch, a Discord full of inside jokes, on "ScreenBuddy." You can absolutely build all of that on Pesto. Nobody free-associates from "Slack" to "team chat" either — distinctive names are a feature, not a bug, and you fix the self-explanatory problem with a five-word tagline, not by neutering the name into oatmeal.</p>
+  </details>
+  <details><summary>The Contrarian <span class="who">— keep_screenbuddy</span></summary>
+    <p>Every argument for "Pesto" is a taste argument. Every argument against it is a Tuesday-you-ship-or-you-don't argument, and those always win two days out. Look at what "rename" actually touches: a live Stripe product real customers will see on their credit card statement, an appId change that orphans local config for anyone who already installed the exe today, two Supabase projects, a Vercel backend URL, a support domain already hardcoded into the app, and a git history that says "public beta marketing queue" — meaning you've already told people to expect something. That's not a find-and-replace, that's a migration project with a rollback plan, and you're proposing to start it 48 hours before launch. Meanwhile "Pesto" isn't even validated as a name — nobody's checked if pesto.app is taken, nobody's checked the other dev tool already using that name for trademark collision, nobody's confirmed the domain is buyable. You'd be trading a boring-but-shipped name for an exciting-but-unresearched one, on a deadline that has zero slack for "oh, pesto.com is squatted" or "turns out there's a pesto.dev already indexing above us." The mascot works exactly because it's decoupled from the infra — Pesto can be as charming as it wants in the UI copy while the plumbing underneath stays boring and already-paid-for. Ship what's built. Let the parrot be the parrot.</p>
+  </details>
+  <details><summary>The Executor <span class="who">— hybrid</span></summary>
+    <p>You have a sk_live_ Stripe product, two Supabase projects, a Vercel backend URL, an appId, and a built .exe all wired to "screenbuddy" — and a public beta commit already in the queue. Renaming means touching a live payment system and writing a config migration so existing installs don't lose settings, none of which is "48 hours" work if you actually test it, it's "48 hours of nothing else." That's not scope creep risk, that's scope creep certainty two days before launch. Meanwhile you already have the better brand asset sitting right there for free: Pesto is distinctive, memorable, and already has dialogue and art. So don't rename anything technical — keep package.json, appId, config file, Stripe product, Supabase, and the backend exactly as-is. Instead, front-load Pesto in every user-facing surface you haven't shipped yet: marketing site headline becomes "Meet Pesto, your screen buddy" instead of "ScreenBuddy," tray tooltip and onboarding copy lean on Pesto's personality, README flips to "Pesto by ScreenBuddy" if you want, and future URLs/handles you haven't registered yet (socials, support docs) can use Pesto. That's a copy and asset change you can finish today with zero backend risk. If Pesto proves itself as the brand people actually talk about, do the full legal/infra rename later as a deliberate v2 migration with a proper cutover plan, not as a launch-week fire drill.</p>
+  </details>
+  <details><summary>The First Principles Thinker <span class="who">— hybrid</span></summary>
+    <p>The question "rename or not" is downstream of an unasked question: what hypothesis does the name serve, and has it been tested? Nothing here shows Pesto vs ScreenBuddy was ever A/B'd with a user. This is a taste preference dressed as a strategy decision, and it's being entertained 48 hours before ship with a live Stripe SKU on the line. First principles: (1) a name's job is to be found, understood, and trusted — ScreenBuddy is doing job #1 and #2 for free, Pesto does neither without paid explanation; (2) the cost of the rename isn't "editing text," it's re-touching a live payment object, two Supabase projects, an appId tied to a config file on disk, and a domain that doesn't even exist yet (screenbuddy.app is referenced, pesto.app presumably isn't secured) — that's not a branding decision, that's a distributed-systems migration with a 2-day deadline; (3) the actual asset worth protecting is the mascot's personality, which is already decoupled from the infra and can be amplified without touching a single sk_live_ key. Ship the thing that's already wired to money, let the character do the brand work it's already doing for free, and revisit the corporate name after you have users and revenue data telling you the name is actually costing you conversions — not before.</p>
+  </details>
+  <details><summary>The Outsider <span class="who">— keep_screenbuddy</span></summary>
+    <p>I'm someone scrolling a landing page for two seconds before deciding whether to trust an app with screen access — the single biggest thing you can do for me is tell me what it does before I have to think. "ScreenBuddy" does that job instantly; "Pesto" makes me pause and Google it, and what I find is a pasta sauce and possibly a different dev tool, which is exactly the wrong instinct to trigger for something requesting screen-recording permissions. That confusion tax is a real cost even setting aside the fact that you'd be renaming a live Stripe subscription product real people are already being billed under, orphaning local config files, and re-registering a domain/support URL two days before you wanted to be in market — none of that is "just find and replace," it's the kind of yak-shave that eats your entire runway right when you need to be doing customer-facing work. The mascot angle is already free money you're not using: let Pesto stay the charming personality inside ScreenBuddy the same way Duolingo's owl or Mailchimp's chimp work — I bond with the character, I trust the plainly-named product, everybody wins. If in six months "Pesto" earns its keep as a beloved character with its own fandom, you can revisit a full rebrand with a real trademark search and a proper migration plan — not as a scramble on day minus-two.</p>
+  </details>
+
+  <details><summary>Peer-review highlights <span class="who">— what the reviewers converged on</span></summary>
+    <p><b>Strongest response:</b> split between the <b>First Principles Thinker (D)</b> (3 of 5 reviewers — for reframing the whole debate as "untested taste preference vs. concrete cost," putting the burden of proof on the side proposing change) and the <b>Executor (C)</b> (2 of 5 — for the most concrete, immediately executable hybrid plan).<br><br>
+    <b>Biggest blind spot:</b> unanimous, 5 of 5 — the <b>Expansionist (A)</b>, for asserting the Stripe/appId rename is "a 30-second dashboard edit, not a migration" while directly contradicting the given facts (the config change orphans existing installs without a migration; the Stripe product is real and live).<br><br>
+    <b>What ALL five missed:</b> (1) nobody proposed actually checking pesto.app/.com domain availability or the trademark collision — a 15-30 minute task, not a strategic debate; (2) the hybrid path's hidden cost — "Meet Pesto" marketing copy next to a "ScreenBuddy Premium" billing descriptor at first charge could read as inconsistent, even phishing-adjacent; (3) no advisor separated risk tiers within "the infrastructure" — Stripe (real billing) vs. Supabase/Vercel (purely cosmetic); (4) nobody verified whether Stripe product display names even affect the billing descriptor customers see, so both "trivial" and "risky" framings may be unverified; (5) no concrete trigger condition proposed for revisiting the decision later, risking the same debate recurring in six months with more sunk cost.</p>
+  </details>
+
+  <div class="foot">Generated by LLM Council · ScreenBuddy naming decision · 2026-07-08</div>
+</div>
+</body>
+</html>

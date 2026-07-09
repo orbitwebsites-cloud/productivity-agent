@@ -5,12 +5,69 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
+const { findPowerShell } = require('./pwsh');
 
-// Get the foreground window's app name + title WITHOUT any native/compiled module.
-// Windows: a tiny PowerShell script using user32.dll (GetForegroundWindow, etc.).
-// macOS:   osascript / System Events.
-// This keeps the app free of native addons, so it packages into a plain .exe with
-// no Visual Studio / node-gyp step. Metadata only — no pixels are ever read.
+// Get the foreground window's app name + title.
+// Windows: direct Win32 API calls via koffi (no process spawn — see win32native below).
+// macOS:   osascript / System Events (spawned, but only used for minimize/activate here).
+// Metadata only — no pixels are ever read.
+
+// ---- Windows: native Win32 FFI (no PowerShell spawn on the hot 5s polling path) ----
+// A fresh `powershell.exe` per poll costs ~100-300ms CPU (.NET CLR startup) every tick,
+// which is real overhead on weak hardware. Direct user32/kernel32 calls via koffi cost
+// sub-millisecond. koffi ships prebuilt bindings (no node-gyp/Visual Studio needed to
+// build), so this doesn't reintroduce the native-module packaging problem this file was
+// originally written to avoid.
+let win32native = null;
+if (process.platform === 'win32') {
+  try {
+    const koffi = require('koffi');
+    const user32 = koffi.load('user32.dll');
+    const kernel32 = koffi.load('kernel32.dll');
+    const GetForegroundWindow = user32.func('__stdcall', 'GetForegroundWindow', 'void *', []);
+    const GetWindowTextW = user32.func('__stdcall', 'GetWindowTextW', 'int', ['void *', 'void *', 'int']);
+    const GetWindowThreadProcessId = user32.func('__stdcall', 'GetWindowThreadProcessId', 'uint32', ['void *', 'void *']);
+    const OpenProcess = kernel32.func('__stdcall', 'OpenProcess', 'void *', ['uint32', 'int', 'uint32']);
+    const QueryFullProcessImageNameW = kernel32.func('__stdcall', 'QueryFullProcessImageNameW', 'int', ['void *', 'uint32', 'void *', 'void *']);
+    const CloseHandle = kernel32.func('__stdcall', 'CloseHandle', 'int', ['void *']);
+    const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
+    win32native = function getActiveWindowNative() {
+      const hwnd = GetForegroundWindow();
+      if (!hwnd) return null;
+
+      // GetWindowTextW (not the ANSI GetWindowTextA) so non-Latin titles — CJK, emoji,
+      // accented characters — decode correctly instead of turning into "?" garbage.
+      const titleBuf = Buffer.alloc(1024); // 512 UTF-16 chars
+      const len = GetWindowTextW(hwnd, titleBuf, 512);
+      const title = titleBuf.toString('utf16le', 0, Math.max(0, len) * 2);
+
+      const pidBuf = Buffer.alloc(4);
+      GetWindowThreadProcessId(hwnd, pidBuf);
+      const pid = pidBuf.readUInt32LE(0);
+
+      let appName = 'Unknown';
+      const hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
+      if (hProcess) {
+        const nameBuf = Buffer.alloc(2048);
+        const sizeBuf = Buffer.alloc(4);
+        sizeBuf.writeUInt32LE(1024, 0); // capacity in WCHARs
+        const ok = QueryFullProcessImageNameW(hProcess, 0, nameBuf, sizeBuf);
+        if (ok) {
+          const nameLen = sizeBuf.readUInt32LE(0);
+          const fullPath = nameBuf.toString('utf16le', 0, nameLen * 2);
+          const parts = fullPath.split(String.fromCharCode(92)); // split on backslash
+          appName = parts[parts.length - 1].replace(/\.exe$/i, '');
+        }
+        CloseHandle(hProcess);
+      }
+
+      return { app: appName, title, pid };
+    };
+  } catch {
+    win32native = null; // fall back to the PowerShell path below if koffi fails to load
+  }
+}
 
 let winScriptPath = null;
 
@@ -73,7 +130,7 @@ const MAC_HIDE = [
 
 async function minimizeActiveWindow() {
   if (process.platform === 'win32') {
-    await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', ensureMinScript()]);
+    await run(findPowerShell(), ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', ensureMinScript()]);
   } else if (process.platform === 'darwin') {
     await run('osascript', MAC_HIDE);
   }
@@ -98,7 +155,7 @@ if (-not $ok -and $appName) {
 }
 Write-Output $(if ($ok) { 'ok' } else { 'miss' })
 `;
-    await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script], 2500);
+    await run(findPowerShell(), ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script], 2500);
   } else if (process.platform === 'darwin' && appName) {
     await run('osascript', ['-e', `tell application "${appName.replace(/"/g, '\\"')}" to activate`], 2500);
   }
@@ -113,7 +170,7 @@ async function launchOrActivateApp(appName) {
     // Fall through and attempt to launch by process/app name.
   }
   if (process.platform === 'win32') {
-    await run('powershell.exe', [
+    await run(findPowerShell(), [
       '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
       '-Command', `Start-Process '${String(appName).replace(/'/g, "''")}'`
     ], 2500);
@@ -154,9 +211,15 @@ const MAC_OSA = [
 
 // Returns { app, title } or null.
 async function getActiveWindow() {
+  if (process.platform === 'win32' && win32native) {
+    return win32native();
+  }
+
   let raw;
   if (process.platform === 'win32') {
-    raw = await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', ensureWinScript()]);
+    // koffi failed to load for some reason — fall back to the (slower) PowerShell path
+    // so tracking still works rather than breaking entirely.
+    raw = await run(findPowerShell(), ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', ensureWinScript()]);
   } else if (process.platform === 'darwin') {
     raw = await run('osascript', MAC_OSA);
   } else {

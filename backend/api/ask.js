@@ -36,30 +36,36 @@ module.exports = async (req, res) => {
   const summary = String(body.summary || '').slice(0, 12000);
   if (!question) return send(res, 400, { error: 'question is required' });
 
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
+  // Any OpenAI-compatible /chat/completions endpoint — defaults to Cerebras's free tier
+  // (1M tokens/day, the best free daily cap available; free tier caps context at 8K tokens,
+  // which is why summary/question are kept short above). Swap providers (Groq, Gemini,
+  // OpenRouter, Together, ...) by changing env vars only.
+  const baseUrl = env('LLM_BASE_URL', 'https://api.cerebras.ai/v1').replace(/\/$/, '');
+  const r = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
-      'x-api-key': env('ANTHROPIC_API_KEY'),
-      'anthropic-version': '2023-06-01',
+      Authorization: `Bearer ${env('LLM_API_KEY')}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: env('ANTHROPIC_MODEL', 'claude-sonnet-5'),
+      model: env('LLM_MODEL', 'llama-3.3-70b'),
       max_tokens: 600,
-      system: SYSTEM_PROMPT,
-      messages: [{
-        role: 'user',
-        content: `Activity data:\n${summary || '(no activity data provided)'}\n\nUser question: ${question}`
-      }]
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: `Activity data:\n${summary || '(no activity data provided)'}\n\nUser question: ${question}`
+        }
+      ]
     })
   });
 
   if (!r.ok) {
     const detail = await r.text().catch(() => '');
-    console.error('anthropic error', r.status, detail.slice(0, 500));
+    console.error('llm error', r.status, detail.slice(0, 500));
     return send(res, 502, { error: 'AI is unavailable right now — try again in a minute.' });
   }
   const data = await r.json();
-  const answer = (data.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
+  const answer = String((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '').trim();
   return send(res, 200, { answer });
 };

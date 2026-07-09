@@ -3,9 +3,37 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ScreenBuddy - Pesto</title>
-  <meta name="description" content="Download ScreenBuddy, the proactive desktop companion that helps you stay on your chosen pursuit." />
+  <title>ScreenBuddy - Pesto, your desktop focus Jarvis</title>
+  <meta name="description" content="Download ScreenBuddy, the proactive desktop companion that helps you stay on your chosen pursuit. Local-first activity tracking, reversible focus guarding, and context recovery for Windows." />
+  <link rel="canonical" href="https://screenbudy.orbitboyzz.me/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="ScreenBuddy - Pesto, your desktop focus Jarvis" />
+  <meta property="og:description" content="A desktop companion that watches your active apps locally, keeps your current pursuit in view, and steps in before a quick distraction turns into an hour." />
+  <meta property="og:url" content="https://screenbudy.orbitboyzz.me/" />
+  <meta property="og:image" content="https://screenbudy.orbitboyzz.me/assets/pesto.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ScreenBuddy - Pesto, your desktop focus Jarvis" />
+  <meta name="twitter:description" content="Local-first focus guarding and context recovery for Windows. Free to track, Premium for AI answers." />
+  <meta name="twitter:image" content="https://screenbudy.orbitboyzz.me/assets/pesto.png" />
   <link rel="stylesheet" href="styles.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "ScreenBuddy",
+    "alternateName": "Pesto",
+    "operatingSystem": "Windows",
+    "applicationCategory": "ProductivityApplication",
+    "description": "A desktop companion that tracks local app/window activity, organizes time into Life Pursuits, and uses Jarvis Mode to help you stay oriented to the goal you chose.",
+    "url": "https://screenbudy.orbitboyzz.me/",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "description": "Free local tracking and focus guarding. Premium AI answers available as a paid subscription."
+    }
+  }
+  </script>
 </head>
 <body>
   <main class="home">
@@ -18,6 +46,7 @@
         <a href="#jarvis">Jarvis Mode</a>
         <a href="#why">Why Pesto</a>
         <a href="#setup">Setup</a>
+        <a href="#privacy">Privacy</a>
         <a href="/support.html">Support</a>
       </div>
     </nav>
@@ -46,7 +75,7 @@
         <p class="kicker">Jarvis Mode</p>
         <h2>Pesto does not take over your mouse. It keeps you honest.</h2>
       </div>
-      <div class="feature-grid">
+      <div class="feature-grid stagger-children">
         <article>
           <span class="num">01</span>
           <h3>Warden Intervention</h3>
@@ -71,7 +100,7 @@
         <h2>Download, approve helpers, and let Pesto handle the boring parts.</h2>
         <p class="lede">The installer explains what it needs, downloads missing pieces with progress, and opens a prefilled support form if anything fails.</p>
       </div>
-      <div class="setup-steps" aria-label="Setup flow">
+      <div class="setup-steps stagger-children" aria-label="Setup flow">
         <article>
           <strong>1</strong>
           <span>Checks required helpers</span>
@@ -93,7 +122,7 @@
         <h2>Most blockers assume you are logical right when you are not.</h2>
         <p class="lede">Pesto is designed around the moment you start drifting: tired, stressed, bored, or switching tabs without remembering why.</p>
       </div>
-      <div class="problem-list">
+      <div class="problem-list stagger-children">
         <article>
           <strong>Not a punishment wall</strong>
           <p>Pesto warns first, then minimizes. It does not shame you, lock your machine, or close unsaved work.</p>
@@ -109,7 +138,7 @@
       </div>
     </section>
 
-    <section class="trust-band" aria-label="Privacy and beta notes">
+    <section class="trust-band stagger-children" aria-label="Privacy and beta notes">
       <div>
         <span class="trust-label">Local first</span>
         <p>Activity is based on foreground apps and window titles. Screen pixels are not captured for the current Warden/Jarvis behavior.</p>
@@ -121,6 +150,35 @@
       <div>
         <span class="trust-label">Human controlled</span>
         <p>Pesto helps you stay pointed at your own work. It does not do your job for you.</p>
+      </div>
+    </section>
+
+    <section id="privacy" class="feature-band">
+      <div>
+        <p class="kicker">Privacy FAQ</p>
+        <h2>What Pesto sees, and what never leaves your machine.</h2>
+      </div>
+      <div class="feature-grid stagger-children">
+        <article>
+          <span class="num">?</span>
+          <h3>Does Pesto record my screen?</h3>
+          <p>No. Pesto tracks only the active app name and window title &mdash; never pixels. A future opt-in "Full" tier for screenshots will be per-app and off by default, never automatic.</p>
+        </article>
+        <article>
+          <span class="num">?</span>
+          <h3>Where is my activity stored?</h3>
+          <p>100% locally, in a plain file on your own computer. The free tier &mdash; tracking, Life Pursuits, Jarvis Mode, and deterministic answers &mdash; needs no account and nothing ever leaves your machine.</p>
+        </article>
+        <article>
+          <span class="num">?</span>
+          <h3>What does Premium send anywhere?</h3>
+          <p>Only when you ask Pesto a question with AI answers unlocked: a small text summary (app names, window titles, durations) goes to our server to get phrased. Never screenshots, never your full activity log, never without you asking.</p>
+        </article>
+        <article>
+          <span class="num">?</span>
+          <h3>Is this okay on a work laptop?</h3>
+          <p>We'd recommend personal machines only. Even metadata-only tracking can run against an employer's device policy &mdash; that's a policy question, not something a privacy toggle can fix for you.</p>
+        </article>
       </div>
     </section>
   </main>

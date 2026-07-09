@@ -47,13 +47,13 @@ function startInstallProgress() {
     let label;
     if (elapsed < 2500) {
       target = 12 + (elapsed / 2500) * 48;
-      label = 'Checking local requirements';
+      label = 'Scanning your PC for apps';
     } else if (elapsed < 6000) {
       target = 60 + ((elapsed - 2500) / 3500) * 30;
-      label = 'Downloading and starting Hermes';
+      label = 'Building your Life Pursuits';
     } else {
       target = 90 + Math.min(7, Math.log1p((elapsed - 6000) / 2000) * 3);
-      label = 'Scanning apps and finishing setup';
+      label = 'Finishing setup';
     }
     const eased = progressValue + (target - progressValue) * 0.22;
     setProgress(Math.min(eased, 97), label);
@@ -79,7 +79,7 @@ function applySetupState(cfg) {
     msg.textContent = "I couldn't finish setup. You can try again or open help with the error already filled in.";
     openHelpBtn.hidden = false;
   } else if (status === 'installing') {
-    msg.textContent = 'Setting up Hermes and scanning your apps.';
+    msg.textContent = 'Setting up — scanning your apps. Takes a few seconds.';
     openHelpBtn.hidden = true;
   } else {
     msg.textContent = '';
@@ -103,7 +103,7 @@ async function installSetup() {
   installBtn.disabled = true;
   declineBtn.disabled = true;
   openHelpBtn.hidden = true;
-  msg.textContent = 'Installing Hermes, starting local AI, and building your Life Pursuits.';
+  msg.textContent = 'Scanning your PC for apps and building your Life Pursuits — a few seconds.';
   startInstallProgress();
   try {
     const cfg = await window.buddy.installSetup();
@@ -140,10 +140,9 @@ document.querySelectorAll('.navitem').forEach((b) => {
     document.querySelectorAll('.navitem').forEach((x) => x.classList.remove('active'));
     b.classList.add('active');
     const page = b.dataset.page;
-    document.getElementById('page-pursuits').hidden = page !== 'pursuits';
-    document.getElementById('page-privacy').hidden = page !== 'privacy';
-    document.getElementById('page-jarvis').hidden = page !== 'jarvis';
-    document.getElementById('page-premium').hidden = page !== 'premium';
+    document.querySelectorAll('.page').forEach((p) => { p.classList.remove('active'); p.hidden = true; });
+    const target = document.getElementById('page-' + page);
+    if (target) { target.hidden = false; requestAnimationFrame(() => target.classList.add('active')); }
     if (page === 'privacy') loadPrivacy();
     if (page === 'jarvis') loadJarvis();
     if (page === 'premium') loadPremium();
@@ -211,6 +210,7 @@ async function savePursuits() {
   flash('saveMsg', 'Saved ✅ Pesto will sort new time into these.');
 }
 
+document.getElementById('visitSite').addEventListener('click', () => window.buddy.openSite());
 document.getElementById('addPursuit').addEventListener('click', () => pursuitRow({ name: '', keywords: [] }));
 document.getElementById('savePursuits').addEventListener('click', savePursuits);
 
