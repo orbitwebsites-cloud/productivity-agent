@@ -607,7 +607,7 @@ ipcMain.handle('premium:signUp', (event, creds) => {
   return premium.signUp(String(creds?.email || '').trim(), String(creds?.password || ''));
 });
 ipcMain.handle('premium:signOut', (event) => { requireAppWindow(event); return premium.signOut(); });
-ipcMain.handle('premium:upgrade', (event) => { requireAppWindow(event); return premium.upgrade(); });
+ipcMain.handle('premium:upgrade', (event, plan) => { requireAppWindow(event); return premium.upgrade(plan); });
 
 // ---- Accountability IPC ----
 // Warden overlay result: minimize (reversible) or cancel.

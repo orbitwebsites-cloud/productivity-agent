@@ -113,9 +113,9 @@ async function status() {
   }
 }
 
-// Opens Stripe Checkout in the user's browser.
-async function upgrade() {
-  const r = await backendCall('POST', '/api/checkout');
+// Opens Stripe Checkout in the user's browser. plan: 'monthly' | 'annual'.
+async function upgrade(plan) {
+  const r = await backendCall('POST', '/api/checkout', { plan: plan === 'annual' ? 'annual' : 'monthly' });
   if (r.alreadyPremium) return { alreadyPremium: true };
   if (r.url) { await shell.openExternal(r.url); return { opened: true }; }
   throw new Error('No checkout link returned.');

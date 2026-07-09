@@ -51,7 +51,7 @@ contextBridge.exposeInMainWorld('buddy', {
   premiumSignIn: (email, password) => ipcRenderer.invoke('premium:signIn', { email, password }),
   premiumSignUp: (email, password) => ipcRenderer.invoke('premium:signUp', { email, password }),
   premiumSignOut: () => ipcRenderer.invoke('premium:signOut'),
-  premiumUpgrade: () => ipcRenderer.invoke('premium:upgrade'),
+  premiumUpgrade: (plan) => ipcRenderer.invoke('premium:upgrade', plan),
   hidePanel: () => ipcRenderer.invoke('panel:hide'),
   quit: () => ipcRenderer.invoke('buddy:quit')
 });

@@ -411,12 +411,12 @@ function renderPremium(s) {
   const badge = document.getElementById('premBadge');
   badge.textContent = s.premium ? '✨ Premium' : 'Free';
   badge.className = `prem-badge ${s.premium ? 'premium' : 'free'}`;
-  document.getElementById('premUpgrade').hidden = !!s.premium;
+  document.getElementById('premPlans').hidden = !!s.premium;
   document.getElementById('premHint').textContent = s.premium
     ? 'AI answers are on — ask Pesto anything in the widget (Alt+Space).'
     : s.error
       ? `Signed in, but I couldn't reach the Premium server: ${s.error}`
-      : 'Upgrade to unlock AI answers. Payment opens in your browser.';
+      : 'Pick a plan to start your 7-day free trial. Payment opens in your browser.';
 }
 
 async function loadPremium() {
@@ -455,19 +455,22 @@ document.getElementById('premSignOutBtn').addEventListener('click', async () => 
   renderPremium(await window.buddy.premiumSignOut());
 });
 document.getElementById('premRefresh').addEventListener('click', loadPremium);
-document.getElementById('premUpgrade').addEventListener('click', async () => {
+
+async function startCheckout(plan) {
   const msg = document.getElementById('premMsg');
   msg.textContent = 'Opening checkout in your browser…';
   try {
-    const r = await window.buddy.premiumUpgrade();
+    const r = await window.buddy.premiumUpgrade(plan);
     msg.textContent = r.alreadyPremium
       ? "You're already Premium! 🎉"
-      : 'Finish payment in the browser, then hit “Refresh status”.';
+      : 'Finish in the browser, then hit “Refresh status”. No charge until your 7-day trial ends.';
     if (r.alreadyPremium) loadPremium();
   } catch (err) {
     msg.textContent = `Couldn't start checkout: ${err.message || err}`;
   }
-});
+}
+document.getElementById('premUpgradeMonthly').addEventListener('click', () => startCheckout('monthly'));
+document.getElementById('premUpgradeAnnual').addEventListener('click', () => startCheckout('annual'));
 
 // ---------- helpers ----------
 function escapeHtml(s) {

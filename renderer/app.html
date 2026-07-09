@@ -241,7 +241,7 @@
         <h1>Premium ✨</h1>
         <p class="lead">Everything you use today stays <b>free and local</b>. Premium adds Pesto's
           <b>AI answers</b> — natural-language coaching about your day, powered by our servers.
-          Only a tiny text summary is ever sent. Never your screen.</p>
+          Only a tiny text summary is ever sent. Never your screen. <b>7 days free</b>, then pick a plan.</p>
 
         <div id="premSignedOut" class="agentbox" hidden>
           <label class="fieldlabel" for="premEmailIn">Email</label>
@@ -260,8 +260,23 @@
             <span id="premBadge" class="prem-badge free">Free</span>
           </div>
           <p id="premHint" class="hint"></p>
+
+          <div id="premPlans" class="jarvis-grid" style="margin-top: 10px;">
+            <div class="agentbox" style="margin: 0;">
+              <div style="font-weight: 700; font-size: 15px;">Monthly</div>
+              <div style="font-size: 22px; font-weight: 700; margin: 4px 0;">$14.99<span style="font-size: 13px; font-weight: 400;">/mo</span></div>
+              <p class="hint">Cancel anytime. 7-day free trial.</p>
+              <button id="premUpgradeMonthly" class="save" style="width: 100%;">Start free trial</button>
+            </div>
+            <div class="agentbox" style="margin: 0; border-color: #f0b429;">
+              <div style="font-weight: 700; font-size: 15px;">Annual — save 33%</div>
+              <div style="font-size: 22px; font-weight: 700; margin: 4px 0;">$9.99<span style="font-size: 13px; font-weight: 400;">/mo</span></div>
+              <p class="hint">Billed $119.88/yr. 7-day free trial.</p>
+              <button id="premUpgradeAnnual" class="save" style="width: 100%;">Start free trial</button>
+            </div>
+          </div>
+
           <div class="saverow">
-            <button id="premUpgrade" class="save">✨ Upgrade to Premium</button>
             <button id="premRefresh" class="ghostsave">Refresh status</button>
             <button id="premSignOutBtn" class="ghostsave">Sign out</button>
           </div>

@@ -114,8 +114,20 @@ frictionless sign-up (currently requires clicking an email link before first sig
   unpacked extension, pushed a fill over the WS bridge, confirmed 6/6 fields filled correctly
   and the test form's submit handler never fired. Not verified in a real desktop browser or in
   Firefox specifically — do that before relying on it.
+- **Pricing changed** (user decision, 2026-07-09): $14.99/mo or $9.99/mo billed annually
+  ($119.88/yr), both starting with a **7-day free trial** — hard paywall (no AI) once it ends,
+  2 options only, no third tier. `backend/api/checkout.js` takes `{ plan: 'monthly'|'annual' }`
+  and adds `subscription_data[trial_period_days]`; Stripe's native "trialing" status already
+  counted as premium in `isPremium()` (`backend/lib/util.js`), so no other backend change was
+  needed for the trial itself. `scripts/finish-setup.js` now provisions **both** prices under
+  the same "ScreenBuddy Premium" product and pushes `STRIPE_PRICE_ID_ANNUAL` + `TRIAL_DAYS` to
+  Vercel — **it does not touch the existing live $4.99/mo price** (Stripe prices are immutable
+  once created; old one is left alone, unreferenced once `STRIPE_PRICE_ID` is repointed).
+  **I did not run this against live Stripe** — no secret key in this environment, and it
+  shouldn't be pasted into chat either. To go live: `node scripts/finish-setup.js` locally with
+  your real `.env`, same as the original setup.
 
 ## Run / build
 - Dev: `npm start` · Build exe: `npm run build:win` -> `dist\ScreenBuddy 0.1.0.exe`
 - Backend redeploy: `npx vercel deploy --prod --yes` from repo root (CLI is authed).
-- Test premium flow: app → Premium ✨ → create account → sign in → Upgrade (needs Stripe env).
+- Test premium flow: app → Premium ✨ → create account → sign in → pick a plan (needs Stripe env).
