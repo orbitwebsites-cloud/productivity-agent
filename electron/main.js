@@ -494,6 +494,12 @@ ipcMain.handle('buddy:declineSetup', (event) => {
   requireAppWindow(event);
   return saveConfig({ setup: { status: 'declined', lastError: '', completedAt: null } });
 });
+// One-time skippable "create an account" prompt shown right after setup finishes —
+// see config.js's `onboarding` comment. Free features never depend on this.
+ipcMain.handle('buddy:completeOnboarding', (event) => {
+  requireAppWindow(event);
+  return saveConfig({ onboarding: { accountPromptDone: true } });
+});
 ipcMain.handle('buddy:openSetupHelp', async (event, errorText) => {
   requireAppWindow(event);
   const cfg = loadConfig();
@@ -620,6 +626,7 @@ ipcMain.handle('premium:signUp', (event, creds) => {
   requireAppWindow(event);
   return premium.signUp(String(creds?.email || '').trim(), String(creds?.password || ''));
 });
+ipcMain.handle('premium:signInGoogle', (event) => { requireAppWindow(event); return premium.signInWithGoogle(); });
 ipcMain.handle('premium:signOut', (event) => { requireAppWindow(event); return premium.signOut(); });
 ipcMain.handle('premium:upgrade', (event, plan) => { requireAppWindow(event); return premium.upgrade(plan); });
 

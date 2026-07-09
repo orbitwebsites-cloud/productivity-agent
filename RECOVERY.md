@@ -146,6 +146,45 @@ frictionless sign-up (currently requires clicking an email link before first sig
   **I did not run this against live Stripe** — no secret key in this environment, and it
   shouldn't be pasted into chat either. To go live: `node scripts/finish-setup.js` locally with
   your real `.env`, same as the original setup.
+- **WhatsApp/Puppeteer now packaged into the installer** (user decision, 2026-07-09 — "people
+  shouldn't have to touch a terminal to pair WhatsApp"). Two changes:
+  1. `.puppeteerrc.cjs` points Puppeteer's Chromium download at `node_modules/.cache/puppeteer`
+     (inside the project) instead of the default `~/.cache/puppeteer` (outside it, invisible to
+     electron-builder). Ran `npx puppeteer browsers install chrome chrome-headless-shell` to
+     redownload there — 626MB, verified present locally.
+  2. `package.json`'s `build.files` dropped the old fully-hand-curated `node_modules/*` list
+     (it predates whatsapp-web.js/puppeteer and would silently miss dozens of their transitive
+     deps — 186 production packages now, was ~13) in favor of electron-builder's **default**
+     dependency-tree-based `node_modules` inclusion, which is what most electron-builder
+     projects rely on and handles nested/hoisted deps correctly, plus one explicit extra entry
+     for the puppeteer cache dir (not a resolvable npm package, so the default walker won't
+     find it on its own). Added `asarUnpack` for `puppeteer`/`puppeteer-core`/the cache dir,
+     since a real Chrome binary can't be exec'd from inside an asar archive.
+  - **I could not verify a real build with this config.** `npx electron-builder --dir` in this
+    sandbox fails before producing any output — `Response code 403 (Forbidden)` fetching an
+    electron-builder tooling asset, unrelated to this `files`/`asarUnpack` change, caused by
+    this environment's outbound proxy blocking that download. This is a sandbox limitation, not
+    a known code problem, but it means **this packaging config is unverified** — build it for
+    real (`npm run build:win`) and confirm WhatsApp QR pairing actually works from the packaged
+    `.exe`, not just `npm start`, before shipping it to anyone.
+- **Google sign-in** (`electron/oauth.js`): Supabase OAuth + PKCE, no supabase-js SDK — matches
+  the existing plain-REST auth pattern in `premium.js`. Flow: open the system browser to
+  Supabase's `/authorize?provider=google` with a PKCE challenge → a short-lived local HTTP
+  server on `127.0.0.1:53682` catches Supabase's own redirect-back with an auth code → exchange
+  that code for a session via `/token?grant_type=pkce`. Wired into `premium.signInWithGoogle()`
+  (same session-storage/`provider:'backend'` path as email sign-in), a "Continue with Google"
+  button on the Premium page, and the new onboarding prompt below.
+  **Needs one thing I can't do myself: Google must be enabled as an Auth provider in the
+  Supabase dashboard** (Authentication → Providers → Google, with a real Google Cloud OAuth
+  client + redirect URI). Until that's done, the button will fail with whatever error Supabase
+  returns for a disabled provider — that's expected, not a bug, do the dashboard step first.
+- **Skippable account prompt on first run** (`onboarding.accountPromptDone` in config.js): right
+  after "Start Pesto" setup finishes, before the main app shows, a one-time screen offers
+  email/password or Google sign-up with a "Maybe later" skip. Free tracking/answers still work
+  with no account either way — this is surfacing account creation at download time like asked,
+  not gating anything on it. If a true hard requirement (can't use the app at all without an
+  account) is actually what's wanted instead, that's a bigger, different change — say so and
+  I'll do that version instead.
 
 ## Run / build
 - Dev: `npm start` · Build exe: `npm run build:win` -> `dist\ScreenBuddy 0.1.0.exe`

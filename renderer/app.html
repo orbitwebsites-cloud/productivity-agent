@@ -53,6 +53,33 @@
         </div>
       </div>
     </div>
+
+    <div id="setupAccount" class="setup-panel" hidden>
+      <img class="setup-mascot" src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" />
+      <div class="setup-copy">
+        <p class="eyebrow">One more thing</p>
+        <h1>Want to create your account?</h1>
+        <p class="lead">Totally optional — tracking and free answers work either way, no account
+          needed. An account just makes it easy to pick up Premium later and keeps your Jarvis/
+          WhatsApp settings tied to you, not just this PC.</p>
+
+        <label class="fieldlabel" for="onbEmail">Email</label>
+        <input id="onbEmail" class="field" type="email" spellcheck="false" placeholder="you@example.com" />
+        <label class="fieldlabel" for="onbPass">Password</label>
+        <input id="onbPass" class="field" type="password" placeholder="At least 6 characters" />
+        <div class="setup-actions">
+          <button id="onbSignUp" class="save">Create account</button>
+          <button id="onbSignIn" class="ghostsave">I already have one</button>
+        </div>
+        <div class="setup-actions">
+          <button id="onbGoogle" class="ghostsave" style="width: 100%;">Continue with Google</button>
+        </div>
+        <p id="onbMsg" class="setup-msg"></p>
+        <div class="setup-actions">
+          <button id="onbSkip" class="ghostsave">Maybe later</button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <div class="shell">
@@ -253,6 +280,9 @@
           <div class="saverow">
             <button id="premSignIn" class="save">Sign in</button>
             <button id="premSignUp" class="ghostsave">Create account</button>
+          </div>
+          <div class="saverow" style="margin-top: 6px;">
+            <button id="premSignInGoogle" class="ghostsave" style="width: 100%;">Continue with Google</button>
           </div>
         </div>
 

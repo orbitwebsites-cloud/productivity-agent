@@ -12,6 +12,7 @@ let lastSetupError = '';
 const setupGate = document.getElementById('setupGate');
 const setupWelcome = document.getElementById('setupWelcome');
 const setupSad = document.getElementById('setupSad');
+const setupAccount = document.getElementById('setupAccount');
 const shell = document.querySelector('.shell');
 const openHelpBtn = document.getElementById('openSetupHelp');
 
@@ -68,10 +69,14 @@ async function finishProgress() {
 
 function applySetupState(cfg) {
   const status = cfg.setup?.status || 'pending';
-  setupReady = status === 'ready';
+  const setupDone = status === 'ready';
+  const needsAccountPrompt = setupDone && !cfg.onboarding?.accountPromptDone;
+  setupReady = setupDone && !needsAccountPrompt;
+
   setupGate.hidden = setupReady;
   shell.hidden = !setupReady;
-  setupWelcome.hidden = status === 'declined';
+  setupAccount.hidden = !needsAccountPrompt;
+  setupWelcome.hidden = needsAccountPrompt || status === 'declined';
   setupSad.hidden = status !== 'declined';
   const msg = document.getElementById('setupMsg');
   if (status === 'failed' && cfg.setup?.lastError) {
@@ -133,6 +138,51 @@ document.getElementById('retrySetup').addEventListener('click', async () => {
   setupWelcome.hidden = false;
   setupSad.hidden = true;
 });
+
+// ---------- onboarding: skippable account prompt (after setup finishes) ----------
+async function finishOnboarding() {
+  const cfg = await window.buddy.completeOnboarding();
+  applySetupState(cfg);
+  await loadPursuits();
+}
+
+async function onbAuth(kind) {
+  const email = document.getElementById('onbEmail').value.trim();
+  const password = document.getElementById('onbPass').value;
+  const msg = document.getElementById('onbMsg');
+  if (!email || !password) { msg.textContent = 'Enter your email and a password.'; return; }
+  msg.textContent = kind === 'signup' ? 'Creating your account…' : 'Signing in…';
+  try {
+    const s = kind === 'signup'
+      ? await window.buddy.premiumSignUp(email, password)
+      : await window.buddy.premiumSignIn(email, password);
+    if (s.needsEmailConfirm) {
+      msg.textContent = `Almost there — check ${s.email} for a confirmation link, then sign in from the Premium page later.`;
+      return;
+    }
+    await finishOnboarding();
+  } catch (err) {
+    msg.textContent = `Hmm: ${err.message || err}`;
+  }
+}
+
+document.getElementById('onbSignUp').addEventListener('click', () => onbAuth('signup'));
+document.getElementById('onbSignIn').addEventListener('click', () => onbAuth('signin'));
+document.getElementById('onbGoogle').addEventListener('click', async () => {
+  const msg = document.getElementById('onbMsg');
+  const btn = document.getElementById('onbGoogle');
+  btn.disabled = true;
+  msg.textContent = 'Opening Google sign-in in your browser…';
+  try {
+    await window.buddy.premiumSignInGoogle();
+    await finishOnboarding();
+  } catch (err) {
+    msg.textContent = `Google sign-in failed: ${err.message || err}`;
+  } finally {
+    btn.disabled = false;
+  }
+});
+document.getElementById('onbSkip').addEventListener('click', () => finishOnboarding());
 
 // ---------- nav ----------
 document.querySelectorAll('.navitem').forEach((b) => {
@@ -451,6 +501,20 @@ async function premAuth(kind) {
 document.getElementById('premSignIn').addEventListener('click', () => premAuth('signin'));
 document.getElementById('premSignUp').addEventListener('click', () => premAuth('signup'));
 document.getElementById('premPassIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') premAuth('signin'); });
+document.getElementById('premSignInGoogle').addEventListener('click', async () => {
+  const msg = document.getElementById('premMsg');
+  const btn = document.getElementById('premSignInGoogle');
+  btn.disabled = true;
+  msg.textContent = 'Opening Google sign-in in your browser…';
+  try {
+    renderPremium(await window.buddy.premiumSignInGoogle());
+    msg.textContent = '';
+  } catch (err) {
+    msg.textContent = `Google sign-in failed: ${err.message || err}`;
+  } finally {
+    btn.disabled = false;
+  }
+});
 document.getElementById('premSignOutBtn').addEventListener('click', async () => {
   renderPremium(await window.buddy.premiumSignOut());
 });

@@ -2,6 +2,7 @@
 
 const { shell } = require('electron');
 const { loadConfig, saveConfig } = require('./config');
+const oauth = require('./oauth');
 
 // Premium = the hosted AI. Sign in with a ScreenBuddy account (Supabase auth),
 // subscribe via Stripe Checkout in the browser, and the app calls our backend's
@@ -61,6 +62,15 @@ async function signUp(email, password) {
   }
   // Email confirmation is on — no session until the user clicks the link.
   return { signedIn: false, needsEmailConfirm: true, email };
+}
+
+// Opens the system browser for Google sign-in (see oauth.js). Same end state as
+// signIn/signUp: stores the session, routes AI answers to the hosted backend.
+async function signInWithGoogle() {
+  const data = await oauth.signInWithGoogle(pcfg());
+  storeSession(data);
+  saveConfig({ provider: 'backend' });
+  return status();
 }
 
 function signOut() {
@@ -127,4 +137,4 @@ async function ask(question, summary) {
   return r.answer || '';
 }
 
-module.exports = { signIn, signUp, signOut, status, upgrade, ask, getAccessToken };
+module.exports = { signIn, signUp, signInWithGoogle, signOut, status, upgrade, ask, getAccessToken };

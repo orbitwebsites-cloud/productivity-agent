@@ -21,6 +21,13 @@ const DEFAULTS = {
     supportUrl: 'https://support.orbitboyzz.me/'
   },
 
+  // Shown once, right after first-run setup finishes: a skippable prompt to create
+  // an account (email/password or Google). Free features work with or without one —
+  // this is about surfacing account creation early, not gating anything on it.
+  onboarding: {
+    accountPromptDone: false
+  },
+
   // The user's "Life Pursuits" — what THEY define as their work/goals.
   // A window counts toward a pursuit if its app or title matches any keyword.
   // (Keywords are matched case-insensitively as substrings.)
