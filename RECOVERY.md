@@ -90,6 +90,30 @@ frictionless sign-up (currently requires clicking an email link before first sig
   while `config.js`/the Hermes `.env` point at `8642` — free-tier Hermes answers were silently
   falling back to the slow CLI path every time. And `hermes.js`'s HTTP timeout was 2.5s, too
   short for genuine local inference — bumped to 25s.
+- Local chat is now a real general assistant, not just activity Q&A: `answers.js` tries the AI
+  for every question (not only activity-shaped ones), and the local `CHAT_SYSTEM_PROMPT`
+  (`electron/providers/prompts.js`) explicitly covers "help with whatever else they ask." The
+  premium backend (`backend/api/ask.js`) is untouched — still scoped to activity coaching by
+  design, a general question there just degrades to an honest "no data for that."
+- **Copy-paste-loop nudge** (`electron/loopnudge.js`): watches tracker samples for someone
+  bouncing between an AI-chat tab (ChatGPT/Claude/Gemini/Copilot) and a code editor over and
+  over. After ~3 round trips it fires a notification offering to draft it directly; clicking
+  opens the panel and asks Pesto to take over via the same `buddyAsk()` pipeline above. Skipped
+  mode `chill`. This does *not* reach into the editor and type for the user — that would need
+  real editor integration (a VS Code extension or similar), out of scope here; it opens a chat
+  the AI can actually answer in.
+- **Browser autofill (`extension/` + `electron/autofill-bridge.js`)**: opt-in, off by default.
+  A loopback-only HTTP+WS bridge (127.0.0.1:8643) plus a WebExtension (MV3, `manifest.json` for
+  Chrome/Edge/Chromium — Kimi's browser included, most are Chromium-based — and
+  `manifest.firefox.json` for Firefox, only the background-script manifest key differs) that
+  fills form fields on the active tab from a profile saved in Settings > Jarvis Mode > Browser
+  Autofill. **Never auto-submits** — highlights filled fields + shows a review banner, the human
+  clicks Submit. Triggered via the extension popup (always works) or WhatsApp `!autofill`
+  (best-effort — MV3 background pages suspend when idle in both browsers). Verified end-to-end
+  in this session with Playwright against the pre-installed headless Chromium: loaded the
+  unpacked extension, pushed a fill over the WS bridge, confirmed 6/6 fields filled correctly
+  and the test form's submit handler never fired. Not verified in a real desktop browser or in
+  Firefox specifically — do that before relying on it.
 
 ## Run / build
 - Dev: `npm start` · Build exe: `npm run build:win` -> `dist\ScreenBuddy 0.1.0.exe`

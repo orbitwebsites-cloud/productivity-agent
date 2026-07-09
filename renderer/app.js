@@ -144,7 +144,7 @@ document.querySelectorAll('.navitem').forEach((b) => {
     const target = document.getElementById('page-' + page);
     if (target) { target.hidden = false; requestAnimationFrame(() => target.classList.add('active')); }
     if (page === 'privacy') loadPrivacy();
-    if (page === 'jarvis') { loadJarvis(); loadJarvisWa(); }
+    if (page === 'jarvis') { loadJarvis(); loadJarvisWa(); loadAutofill(); }
     if (page === 'premium') loadPremium();
   });
 });
@@ -363,6 +363,41 @@ window.buddy.onJarvisWhatsappEvent((evt) => {
     qrEl.hidden = false;
   }
   window.buddy.jarvisWhatsappStatus().then(renderJarvisWaStatus);
+});
+
+// ---------- Jarvis Mode: Browser Autofill (beta) ----------
+const AUTOFILL_FIELDS = ['firstName', 'lastName', 'email', 'phone', 'discord', 'ign', 'age', 'school', 'address'];
+const autofillInputId = (key) => `af${key[0].toUpperCase()}${key.slice(1)}`;
+
+async function loadAutofill() {
+  const cfg = await window.buddy.getConfig();
+  document.getElementById('autofillEnabled').checked = !!cfg.autofill?.enabled;
+  const profile = cfg.autofill?.profile || {};
+  AUTOFILL_FIELDS.forEach((key) => {
+    const el = document.getElementById(autofillInputId(key));
+    if (el) el.value = profile[key] || '';
+  });
+}
+
+async function saveAutofill() {
+  const profile = {};
+  AUTOFILL_FIELDS.forEach((key) => {
+    const el = document.getElementById(autofillInputId(key));
+    if (el) profile[key] = el.value.trim();
+  });
+  const settings = { enabled: document.getElementById('autofillEnabled').checked, profile };
+  try {
+    await window.buddy.autofillSet(settings);
+    flash('autofillMsg', settings.enabled ? 'Saved. Bridge is running.' : 'Saved. Bridge is off.');
+  } catch (err) {
+    flash('autofillMsg', `Error: ${err.message}`);
+  }
+}
+document.getElementById('saveAutofill').addEventListener('click', saveAutofill);
+
+document.getElementById('testAutofill').addEventListener('click', async () => {
+  const result = await window.buddy.autofillTrigger();
+  flash('autofillMsg', result?.text || 'Done.');
 });
 
 // ---------- Premium ----------

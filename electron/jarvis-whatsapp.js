@@ -34,6 +34,7 @@ let client = null;
 let ready = false;
 let lastQr = '';
 let askFn = null;
+let fillActiveTabFn = null;
 let projectDir = '';
 let notifyFn = null;
 
@@ -54,7 +55,7 @@ async function qrToDataUrl(qr) {
   }
 }
 
-async function start(config, { ask, notify } = {}) {
+async function start(config, { ask, fillActiveTab, notify } = {}) {
   if (client) return status();
 
   let Client, LocalAuth;
@@ -68,6 +69,7 @@ async function start(config, { ask, notify } = {}) {
   }
 
   askFn = typeof ask === 'function' ? ask : null;
+  fillActiveTabFn = typeof fillActiveTab === 'function' ? fillActiveTab : null;
   notifyFn = typeof notify === 'function' ? notify : null;
   projectDir = config?.jarvisWhatsapp?.projectDir || '';
 
@@ -149,6 +151,8 @@ function helpText() {
     'Dev-ops (needs a project dir set in Settings > Jarvis > WhatsApp Remote):',
     '  !git status',
     '  !git push [commit message]',
+    '  !deploy — latest Vercel deployment status',
+    '  !autofill — fill the active browser tab from your saved profile (review before submitting)',
     '',
     '!help — this list'
   ].join('\n');
@@ -193,6 +197,20 @@ async function runGit(sub, arg) {
   return 'Unknown git command. Try `!git status` or `!git push [message]`.';
 }
 
+// Uses whatever `vercel` CLI auth is already set up on this machine (see
+// scripts/finish-setup.js) — we never hold or ship a Vercel token ourselves.
+async function runDeployStatus() {
+  if (!projectDir) {
+    return 'No project directory configured for Jarvis. Set one in Settings > Jarvis Mode > WhatsApp Remote.';
+  }
+  try {
+    const out = await run('npx', ['--yes', 'vercel', 'ls', '--yes'], projectDir);
+    return out ? `\`\`\`\n${out.split('\n').slice(0, 8).join('\n')}\n\`\`\`` : 'No deployments found.';
+  } catch (err) {
+    return `Couldn't check deploy status: ${String(err.message || err).slice(0, 300)}. Is the Vercel CLI signed in on this machine?`;
+  }
+}
+
 // The router is exported standalone (not just via WhatsApp events) so it can be unit
 // tested without a live WhatsApp session.
 async function route(rawText) {
@@ -208,6 +226,13 @@ async function route(rawText) {
 
   const gitMatch = text.match(/^!git\s+(status|push)\b\s*(.*)$/is);
   if (gitMatch) return runGit(gitMatch[1].toLowerCase(), gitMatch[2].trim());
+
+  if (/^!deploy\b/i.test(text)) return runDeployStatus();
+
+  if (/^!autofill\b/i.test(text)) {
+    if (!fillActiveTabFn) return 'Browser autofill bridge is off. Enable it in Settings > Jarvis Mode > Browser Autofill.';
+    return fillActiveTabFn();
+  }
 
   if (askFn) {
     const result = await askFn(text);

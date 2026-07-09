@@ -63,6 +63,25 @@ const DEFAULTS = {
     projectDir: ''
   },
 
+  // Opt-in local bridge (127.0.0.1:8643, see electron/autofill-bridge.js) that lets
+  // the ScreenBuddy Jarvis browser extension (extension/) fill web forms from this
+  // saved profile. Off by default. The extension only ever fills + highlights fields
+  // for review — it never submits a form on its own.
+  autofill: {
+    enabled: false,
+    profile: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      discord: '',
+      ign: '',
+      age: '',
+      school: '',
+      address: ''
+    }
+  },
+
   // Premium - hosted AI. Sign in (Supabase) + subscription (Stripe) unlock
   // natural-language answers from our backend. Only tiny text summaries are
   // ever sent; the anon key below is publishable by design.

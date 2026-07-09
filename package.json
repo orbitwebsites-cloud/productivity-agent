@@ -74,7 +74,8 @@
     "electron-updater": "^6.8.9",
     "koffi": "^3.1.0",
     "qrcode": "^1.5.4",
-    "whatsapp-web.js": "^1.26.0"
+    "whatsapp-web.js": "^1.26.0",
+    "ws": "^8.18.0"
   },
   "allowScripts": {
     "koffi@3.1.0": true

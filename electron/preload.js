@@ -37,6 +37,14 @@ contextBridge.exposeInMainWorld('buddy', {
     ipcRenderer.on('jarvis:whatsappEvent', handler);
     return () => ipcRenderer.removeListener('jarvis:whatsappEvent', handler);
   },
+  onPrefillPrompt: (cb) => {
+    const handler = (_e, text) => cb(text);
+    ipcRenderer.on('buddy:prefillPrompt', handler);
+    return () => ipcRenderer.removeListener('buddy:prefillPrompt', handler);
+  },
+  autofillStatus: () => ipcRenderer.invoke('buddy:autofillStatus'),
+  autofillSet: (settings) => ipcRenderer.invoke('buddy:autofillSet', settings),
+  autofillTrigger: () => ipcRenderer.invoke('buddy:autofillTrigger'),
   wardenHide: () => ipcRenderer.invoke('warden:hide'),
   wardenCancel: () => ipcRenderer.invoke('warden:cancel'),
   premiumStatus: () => ipcRenderer.invoke('premium:status'),

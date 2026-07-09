@@ -98,6 +98,8 @@ document.getElementById('closeBtn').addEventListener('click', () => window.buddy
 document.getElementById('gearBtn').addEventListener('click', () => window.buddy.openApp());
 window.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.buddy.hidePanel(); });
 
+window.buddy.onPrefillPrompt((text) => ask(text));
+
 addMsg("Hey! I'm Pesto. Ask where you were yesterday, or tell me: switching to Tech Job for the next hour.", 'pesto');
 refreshToday();
 refreshStatus();

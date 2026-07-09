@@ -11,6 +11,8 @@ const accountability = require('./accountability');
 const premium = require('./premium');
 const updater = require('./updater');
 const jarvisWhatsapp = require('./jarvis-whatsapp');
+const loopnudge = require('./loopnudge');
+const autofillBridge = require('./autofill-bridge');
 const { minimizeActiveWindow, activateWindow, launchOrActivateApp } = require('./activewin');
 
 const ASSET = (f) => path.join(__dirname, '..', 'assets', 'pesto', f);
@@ -175,8 +177,32 @@ function setupIsReady() {
 }
 
 // ---- Accountability: notifications + Warden overlay ----
-function notify(title, body) {
-  try { new Notification({ title, body, silent: false }).show(); } catch { /* ignore */ }
+function notify(title, body, onClick) {
+  try {
+    const n = new Notification({ title, body, silent: false });
+    if (onClick) n.on('click', onClick);
+    n.show();
+  } catch { /* ignore */ }
+}
+
+// Copy-paste-loop nudge (loopnudge.js): offer to draft the thing directly instead of
+// the user hand-relaying it between an AI chat tab and their editor. Clicking the
+// notification opens the panel and asks Pesto to take over, using the exact same
+// buddyAsk() -> AI pipeline as typing it in yourself.
+function offerCopyPasteTakeover({ sourceApp, destApp, minutes }) {
+  notify(
+    'Pesto',
+    `You've been bouncing between ${sourceApp} and ${destApp} for ~${minutes} min copy-pasting. Tap me and I'll just draft it here.`,
+    () => {
+      showPanel();
+      if (panel) {
+        panel.webContents.send(
+          'buddy:prefillPrompt',
+          `Take over — help me finish what I was copy-pasting between ${sourceApp} and ${destApp}.`
+        );
+      }
+    }
+  );
 }
 
 function showWarden(appName, context = {}) {
@@ -240,12 +266,14 @@ function startBuddyRuntime() {
     const cfg = loadConfig();
     rememberPrimaryWindow(cfg, sample);
     accountability.onSample(cfg, sample);
+    if (cfg.mode !== 'chill') loopnudge.onSample(sample, offerCopyPasteTakeover);
   });
   buddyStarted = true;
 
   const cfg = loadConfig();
+  if (cfg.autofill?.enabled) autofillBridge.start({ profileProvider: () => loadConfig().autofill?.profile || {} });
   if (jarvisWhatsapp.isEnabled(cfg)) {
-    jarvisWhatsapp.start(cfg, { ask: buddyAsk, notify: forwardJarvisWhatsappEvent })
+    jarvisWhatsapp.start(cfg, { ask: buddyAsk, fillActiveTab: autofillBridge.triggerFill, notify: forwardJarvisWhatsappEvent })
       .catch((err) => notify('Pesto', `Jarvis WhatsApp remote failed to start: ${err.message}`));
   }
 }
@@ -262,7 +290,7 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => { /* stay resident in the tray */ });
-app.on('will-quit', () => { globalShortcut.unregisterAll(); tracker.stop(); jarvisWhatsapp.stop(); });
+app.on('will-quit', () => { globalShortcut.unregisterAll(); tracker.stop(); jarvisWhatsapp.stop(); autofillBridge.stop(); });
 
 // ---- orb IPC (custom click-vs-drag handling) ----
 ipcMain.handle('orb:toggle', () => togglePanel());
@@ -651,11 +679,38 @@ ipcMain.handle('buddy:jarvisWhatsappSet', async (event, settings) => {
   });
 
   if (enabled) {
-    await jarvisWhatsapp.start(cfg, { ask: buddyAsk, notify: forwardJarvisWhatsappEvent });
+    await jarvisWhatsapp.start(cfg, { ask: buddyAsk, fillActiveTab: autofillBridge.triggerFill, notify: forwardJarvisWhatsappEvent });
   } else {
     await jarvisWhatsapp.stop();
   }
   return { config: cfg, status: jarvisWhatsapp.status() };
+});
+
+// ---- Browser autofill bridge (opt-in, off by default — see autofill-bridge.js + extension/) ----
+ipcMain.handle('buddy:autofillStatus', () => ({ running: autofillBridge.isRunning(), port: autofillBridge.PORT }));
+
+ipcMain.handle('buddy:autofillSet', (event, settings) => {
+  requireAppWindow(event);
+  const cur = loadConfig();
+  const enabled = !!settings?.enabled;
+  const cfg = saveConfig({
+    autofill: {
+      enabled,
+      profile: { ...(cur.autofill?.profile || {}), ...(settings?.profile && typeof settings.profile === 'object' ? settings.profile : {}) }
+    }
+  });
+
+  if (enabled) {
+    autofillBridge.start({ profileProvider: () => loadConfig().autofill?.profile || {} });
+  } else {
+    autofillBridge.stop();
+  }
+  return { config: cfg, status: { running: autofillBridge.isRunning(), port: autofillBridge.PORT } };
+});
+
+ipcMain.handle('buddy:autofillTrigger', (event) => {
+  requireAppWindow(event);
+  return { text: autofillBridge.triggerFill() };
 });
 
 async function restoreWorkspace(label) {

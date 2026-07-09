@@ -180,6 +180,61 @@
           <button id="saveJarvisWa" class="save">Save WhatsApp remote</button>
           <span id="jarvisWaMsg" class="savemsg"></span>
         </div>
+
+        <h1 style="margin-top: 32px;">Browser Autofill (beta)</h1>
+        <p class="lead">Fills web forms — applications, sign-ups — from the profile below, for
+          you to review before submitting. Text <code>!autofill</code> on WhatsApp or click the
+          extension icon in your browser. See <code>extension/README.md</code> to load it in
+          Chrome or Firefox.</p>
+        <p class="hint">It only ever fills and highlights fields. It never clicks Submit for you.</p>
+
+        <div class="agentbox">
+          <label class="fieldlabel">
+            <input id="autofillEnabled" type="checkbox" /> Enable browser autofill bridge
+          </label>
+          <div class="jarvis-grid">
+            <div>
+              <label class="fieldlabel" for="afFirstName">First name</label>
+              <input id="afFirstName" class="field" type="text" />
+            </div>
+            <div>
+              <label class="fieldlabel" for="afLastName">Last name</label>
+              <input id="afLastName" class="field" type="text" />
+            </div>
+            <div>
+              <label class="fieldlabel" for="afEmail">Email</label>
+              <input id="afEmail" class="field" type="email" />
+            </div>
+            <div>
+              <label class="fieldlabel" for="afPhone">Phone</label>
+              <input id="afPhone" class="field" type="text" />
+            </div>
+            <div>
+              <label class="fieldlabel" for="afDiscord">Discord</label>
+              <input id="afDiscord" class="field" type="text" />
+            </div>
+            <div>
+              <label class="fieldlabel" for="afIgn">In-game name</label>
+              <input id="afIgn" class="field" type="text" />
+            </div>
+            <div>
+              <label class="fieldlabel" for="afAge">Age</label>
+              <input id="afAge" class="field" type="text" />
+            </div>
+            <div>
+              <label class="fieldlabel" for="afSchool">School</label>
+              <input id="afSchool" class="field" type="text" />
+            </div>
+          </div>
+          <label class="fieldlabel" for="afAddress">Address</label>
+          <input id="afAddress" class="field" type="text" />
+        </div>
+
+        <div class="saverow">
+          <button id="saveAutofill" class="save">Save autofill profile</button>
+          <button id="testAutofill" class="ghostsave">Fill active browser tab now</button>
+          <span id="autofillMsg" class="savemsg"></span>
+        </div>
       </section>
 
       <section id="page-premium" class="page" hidden>
