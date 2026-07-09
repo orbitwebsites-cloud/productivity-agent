@@ -94,11 +94,11 @@ async function startHermesGateway() {
       '$candidates = $candidates | Where-Object { $_ -and (Test-Path $_) }',
       '$exe = $candidates | Select-Object -First 1',
       'if (-not $exe) { throw "Hermes installed, but hermes.exe was not found on PATH or common install paths." }',
-      'Start-Process -FilePath $exe -ArgumentList "serve --skip-build --host 127.0.0.1 --port 9119" -WindowStyle Hidden'
+      'Start-Process -FilePath $exe -ArgumentList "serve --skip-build --host 127.0.0.1 --port 8642" -WindowStyle Hidden'
     ].join('\n');
     return run(ps, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script]);
   }
-  const script = 'if command -v hermes >/dev/null 2>&1; then nohup hermes serve --skip-build --host 127.0.0.1 --port 9119 >/tmp/screenbuddy-hermes.log 2>&1 & else echo "Hermes installed, but hermes was not found on PATH." >&2; exit 1; fi';
+  const script = 'if command -v hermes >/dev/null 2>&1; then nohup hermes serve --skip-build --host 127.0.0.1 --port 8642 >/tmp/screenbuddy-hermes.log 2>&1 & else echo "Hermes installed, but hermes was not found on PATH." >&2; exit 1; fi';
   return run('/bin/sh', ['-lc', script]);
 }
 

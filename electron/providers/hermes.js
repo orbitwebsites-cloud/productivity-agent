@@ -103,7 +103,21 @@ async function chat(args) {
   return cliChat(args);
 }
 
-async function health() {
+async function health({ baseUrl, apiKey } = {}) {
+  if (baseUrl) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2500);
+    try {
+      const res = await fetch(`${baseUrl.replace(/\/$/, '')}/models`, {
+        headers: { Authorization: `Bearer ${apiKey || ''}` },
+        signal: controller.signal
+      });
+      if (!res.ok) throw new Error(`Hermes API error ${res.status}`);
+      return { ok: true };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
   const { stdout } = await run('hermes', ['version'], { timeoutMs: 30000 });
   return { ok: true, version: stdout.trim() };
 }
