@@ -13,6 +13,7 @@ const updater = require('./updater');
 const jarvisWhatsapp = require('./jarvis-whatsapp');
 const loopnudge = require('./loopnudge');
 const autofillBridge = require('./autofill-bridge');
+const browserAgent = require('./browser-agent');
 const { minimizeActiveWindow, activateWindow, launchOrActivateApp } = require('./activewin');
 
 const ASSET = (f) => path.join(__dirname, '..', 'assets', 'pesto', f);
@@ -273,7 +274,7 @@ function startBuddyRuntime() {
   const cfg = loadConfig();
   if (cfg.autofill?.enabled) autofillBridge.start({ profileProvider: () => loadConfig().autofill?.profile || {} });
   if (jarvisWhatsapp.isEnabled(cfg)) {
-    jarvisWhatsapp.start(cfg, { ask: buddyAsk, fillActiveTab: autofillBridge.triggerFill, notify: forwardJarvisWhatsappEvent })
+    jarvisWhatsapp.start(cfg, { ask: buddyAsk, fillActiveTab: autofillBridge.triggerFill, browserTask: runBrowserTask, notify: forwardJarvisWhatsappEvent })
       .catch((err) => notify('Pesto', `Jarvis WhatsApp remote failed to start: ${err.message}`));
   }
 }
@@ -393,6 +394,19 @@ async function buddyAsk(question) {
   const jarvis = await handleJarvisQuestion(question);
   if (jarvis) return jarvis;
   return answers.answer(question, loadConfig());
+}
+
+// General browser-task agent (electron/browser-agent.js), reachable from WhatsApp's
+// !browser command. Requires the autofill bridge + browser extension to be connected.
+async function runBrowserTask(instruction) {
+  if (!autofillBridge.isRunning()) {
+    return 'Browser autofill bridge is off. Enable it in Settings > Jarvis Mode > Browser Autofill first.';
+  }
+  return browserAgent.runTask(instruction, {
+    config: loadConfig(),
+    snapshot: () => autofillBridge.request('snapshot'),
+    act: (action) => autofillBridge.request('act', { action })
+  });
 }
 
 // ---- panel IPC ----
@@ -679,7 +693,7 @@ ipcMain.handle('buddy:jarvisWhatsappSet', async (event, settings) => {
   });
 
   if (enabled) {
-    await jarvisWhatsapp.start(cfg, { ask: buddyAsk, fillActiveTab: autofillBridge.triggerFill, notify: forwardJarvisWhatsappEvent });
+    await jarvisWhatsapp.start(cfg, { ask: buddyAsk, fillActiveTab: autofillBridge.triggerFill, browserTask: runBrowserTask, notify: forwardJarvisWhatsappEvent });
   } else {
     await jarvisWhatsapp.stop();
   }

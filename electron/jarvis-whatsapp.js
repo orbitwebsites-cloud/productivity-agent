@@ -35,6 +35,7 @@ let ready = false;
 let lastQr = '';
 let askFn = null;
 let fillActiveTabFn = null;
+let browserTaskFn = null;
 let projectDir = '';
 let notifyFn = null;
 
@@ -55,7 +56,7 @@ async function qrToDataUrl(qr) {
   }
 }
 
-async function start(config, { ask, fillActiveTab, notify } = {}) {
+async function start(config, { ask, fillActiveTab, browserTask, notify } = {}) {
   if (client) return status();
 
   let Client, LocalAuth;
@@ -70,6 +71,7 @@ async function start(config, { ask, fillActiveTab, notify } = {}) {
 
   askFn = typeof ask === 'function' ? ask : null;
   fillActiveTabFn = typeof fillActiveTab === 'function' ? fillActiveTab : null;
+  browserTaskFn = typeof browserTask === 'function' ? browserTask : null;
   notifyFn = typeof notify === 'function' ? notify : null;
   projectDir = config?.jarvisWhatsapp?.projectDir || '';
 
@@ -153,6 +155,9 @@ function helpText() {
     '  !git push [commit message]',
     '  !deploy — latest Vercel deployment status',
     '  !autofill — fill the active browser tab from your saved profile (review before submitting)',
+    '  !browser <instruction> — do something in your active browser tab, e.g.',
+    '    "!browser open the FAQ page and tell me the refund policy"',
+    '    (never buys/pays/submits/deletes/subscribes on its own — you still do that step)',
     '',
     '!help — this list'
   ].join('\n');
@@ -232,6 +237,12 @@ async function route(rawText) {
   if (/^!autofill\b/i.test(text)) {
     if (!fillActiveTabFn) return 'Browser autofill bridge is off. Enable it in Settings > Jarvis Mode > Browser Autofill.';
     return fillActiveTabFn();
+  }
+
+  const browserMatch = text.match(/^!browser\s+(.+)$/is);
+  if (browserMatch) {
+    if (!browserTaskFn) return 'Browser autofill bridge is off. Enable it in Settings > Jarvis Mode > Browser Autofill first.';
+    return browserTaskFn(browserMatch[1].trim());
   }
 
   if (askFn) {

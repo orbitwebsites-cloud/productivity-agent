@@ -24,13 +24,42 @@ const BRIDGE_WS = 'ws://127.0.0.1:8643';
 let socket = null;
 let reconnectTimer = null;
 
-async function fillActiveTab(profile) {
+async function activeTab() {
   const [tab] = await api.tabs.query({ active: true, lastFocusedWindow: true });
-  if (!tab || !tab.id) return;
+  return tab && tab.id ? tab : null;
+}
+
+async function fillActiveTab(profile) {
+  const tab = await activeTab();
+  if (!tab) return;
   try {
     await api.tabs.sendMessage(tab.id, { type: 'autofill', profile });
   } catch {
     // Content script isn't injected on this page (e.g. a chrome:// page) — ignore.
+  }
+}
+
+function reply(requestId, extra) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+  socket.send(JSON.stringify({ requestId, ...extra }));
+}
+
+// Snapshot/act round trip for the browser-task agent (electron/browser-agent.js).
+// content.js does the real work (element discovery + the click/type/navigate
+// denylist) — this just relays to whichever tab is active and returns the result.
+async function handleAgentRequest(msg) {
+  const tab = await activeTab();
+  if (!tab) { reply(msg.requestId, { error: 'No active browser tab.' }); return; }
+  try {
+    if (msg.type === 'snapshot') {
+      const result = await api.tabs.sendMessage(tab.id, { type: 'agentSnapshot' });
+      reply(msg.requestId, result);
+    } else if (msg.type === 'act') {
+      const result = await api.tabs.sendMessage(tab.id, { type: 'agentAct', action: msg.action });
+      reply(msg.requestId, result);
+    }
+  } catch (err) {
+    reply(msg.requestId, { error: String(err && err.message || err) });
   }
 }
 
@@ -47,10 +76,10 @@ function connect() {
     return;
   }
   socket.onmessage = (event) => {
-    try {
-      const msg = JSON.parse(event.data);
-      if (msg.type === 'fill') fillActiveTab(msg.profile);
-    } catch { /* ignore malformed message */ }
+    let msg;
+    try { msg = JSON.parse(event.data); } catch { return; }
+    if (msg.type === 'fill') fillActiveTab(msg.profile);
+    else if (msg.type === 'snapshot' || msg.type === 'act') handleAgentRequest(msg);
   };
   socket.onclose = scheduleReconnect;
   socket.onerror = () => { try { socket.close(); } catch { /* ignore */ } };

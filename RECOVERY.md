@@ -114,6 +114,26 @@ frictionless sign-up (currently requires clicking an email link before first sig
   unpacked extension, pushed a fill over the WS bridge, confirmed 6/6 fields filled correctly
   and the test form's submit handler never fired. Not verified in a real desktop browser or in
   Firefox specifically — do that before relying on it.
+- **General browser-task agent** (`electron/browser-agent.js`, `!browser <instruction>` on
+  WhatsApp): a bounded (max 6 steps) snapshot → AI-decides-next-action → act loop, built on the
+  same bridge/extension as autofill. `extension/content.js`'s `agentSnapshot` lists visible
+  interactive elements on the active tab; `agentAct` executes exactly one click/type/navigate,
+  blocking (not just discouraging) anything that reads as submit/buy/pay/subscribe/delete/
+  confirm-order — same non-negotiable boundary as autofill, enforced in the content script
+  itself so it holds regardless of what the model decides. Local engine only
+  (`providers.rawChat` in `electron/providers/index.js` throws a clear error on the `backend`
+  provider — the premium backend's `/api/ask` has its own fixed narrower prompt by design, not
+  meant to run arbitrary structured prompts). Verified end-to-end this session with Playwright:
+  real snapshot → decide → act loop completed a genuine 2-step task (open FAQ tab, report the
+  refund policy text) using the real prompt-building/JSON-parsing code (model calls stubbed,
+  since no live Hermes/LLM in this sandbox); separately confirmed the denylist blocks a
+  "Buy Now" and a "Submit Application" button both directly and through the full task loop
+  ("buy this for me" → refused, nothing clicked). Caught and fixed a real bug in this process:
+  the AI-facing decision schema uses `"action"` as the verb field name, the extension's
+  executor used `"type"` — every action was silently failing closed until `browser-agent.js`
+  translated between the two. **Not yet run against a real Hermes/local model's actual output**
+  (only the prompt/parse/act plumbing was verified, not real model judgment) — try it for real
+  before trusting it unsupervised.
 - **Pricing changed** (user decision, 2026-07-09): $14.99/mo or $9.99/mo billed annually
   ($119.88/yr), both starting with a **7-day free trial** — hard paywall (no AI) once it ends,
   2 options only, no third tier. `backend/api/checkout.js` takes `{ plan: 'monthly'|'annual' }`

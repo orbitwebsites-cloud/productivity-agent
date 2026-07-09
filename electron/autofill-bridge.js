@@ -14,11 +14,14 @@ const { WebSocketServer } = require('ws');
 // see extension/content.js — the human still has to review and click Submit.
 
 const PORT = 8643;
+const REQUEST_TIMEOUT_MS = 15000;
 
 let server = null;
 let wss = null;
 let sockets = new Set();
 let getProfile = () => ({});
+let pending = new Map(); // requestId -> { resolve, reject, timer }
+let nextRequestId = 1;
 
 function start({ profileProvider } = {}) {
   if (server) return;
@@ -40,10 +43,22 @@ function start({ profileProvider } = {}) {
     sockets.add(ws);
     ws.on('close', () => sockets.delete(ws));
     ws.on('error', () => sockets.delete(ws));
+    ws.on('message', (raw) => {
+      let msg;
+      try { msg = JSON.parse(raw); } catch { return; }
+      if (msg.requestId && pending.has(msg.requestId)) {
+        const p = pending.get(msg.requestId);
+        clearTimeout(p.timer);
+        pending.delete(msg.requestId);
+        p.resolve(msg);
+      }
+    });
   });
 }
 
 function stop() {
+  for (const p of pending.values()) { clearTimeout(p.timer); p.reject(new Error('bridge stopped')); }
+  pending = new Map();
   if (wss) {
     for (const ws of sockets) { try { ws.close(); } catch { /* ignore */ } }
     try { wss.close(); } catch { /* ignore */ }
@@ -53,13 +68,42 @@ function stop() {
   sockets = new Set();
 }
 
+function anyConnected() {
+  for (const ws of sockets) if (ws.readyState === ws.OPEN) return true;
+  return false;
+}
+
+function broadcast(payload) {
+  let sent = 0;
+  const text = JSON.stringify(payload);
+  for (const ws of sockets) {
+    if (ws.readyState === ws.OPEN) { ws.send(text); sent += 1; }
+  }
+  return sent;
+}
+
+// Send a message to the (first) connected extension and wait for a reply carrying
+// the same requestId. Used by browser-agent.js for the snapshot/act round trip —
+// triggerFill() below stays fire-and-forget since it doesn't need a reply.
+function request(type, extra = {}) {
+  return new Promise((resolve, reject) => {
+    if (!anyConnected()) {
+      reject(new Error("The ScreenBuddy browser extension isn't connected — make sure it's installed and a browser window is open."));
+      return;
+    }
+    const requestId = String(nextRequestId++);
+    const timer = setTimeout(() => {
+      pending.delete(requestId);
+      reject(new Error('Browser extension took too long to respond.'));
+    }, REQUEST_TIMEOUT_MS);
+    pending.set(requestId, { resolve, reject, timer });
+    broadcast({ type, requestId, ...extra });
+  });
+}
+
 // Ask the extension to fill whatever tab is currently focused in the user's browser.
 function triggerFill() {
-  const payload = JSON.stringify({ type: 'fill', profile: getProfile() });
-  let sent = 0;
-  for (const ws of sockets) {
-    if (ws.readyState === ws.OPEN) { ws.send(payload); sent += 1; }
-  }
+  const sent = broadcast({ type: 'fill', profile: getProfile() });
   return sent > 0
     ? `Told the browser extension to fill the active tab (${sent} browser window${sent > 1 ? 's' : ''} connected). Review before submitting — it never auto-submits.`
     : "The ScreenBuddy browser extension isn't connected right now — make sure it's installed and a browser window is open.";
@@ -67,4 +111,4 @@ function triggerFill() {
 
 function isRunning() { return !!server; }
 
-module.exports = { start, stop, triggerFill, isRunning, PORT };
+module.exports = { start, stop, triggerFill, isRunning, request, anyConnected, PORT };

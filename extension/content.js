@@ -101,12 +101,98 @@ function fillForm(profile) {
   return count;
 }
 
+// ---- General browser-task agent (electron/browser-agent.js) ----
+// Lets a WhatsApp/desktop instruction ("open the club sign-up page and go to the
+// FAQ tab") drive the active tab through a short click/type/navigate loop. Same
+// non-negotiable boundary as the autofill flow above: this NEVER completes a
+// consequential action — buying, paying, submitting, deleting, subscribing,
+// confirming an order — on its own. Those are blocked by text/type below,
+// regardless of what the AI decided to do; a human still has to do the last step.
+
+const AGENT_DENYLIST_RE = /\b(submit|buy( it)?( now)?|purchase|pay(ment)?|check\s*out|place\s*order|confirm\s*(order|purchase|payment)|complete\s*(purchase|order|payment)|subscribe|unsubscribe|delete|remove\s*account|cancel\s*subscription|send\s*money|donate|proceed\s*to\s*payment|agree\s*and\s*(pay|continue|subscribe)|sign\s*(the\s*)?contract|accept\s*offer)\b/i;
+
+let agentElements = [];
+
+function isVisible(el) {
+  if (!(el instanceof Element)) return false;
+  const rect = el.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return false;
+  const style = window.getComputedStyle(el);
+  return style.visibility !== 'hidden' && style.display !== 'none';
+}
+
+function elementText(el) {
+  const text = (el.innerText || el.value || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('title') || '').trim();
+  return text.replace(/\s+/g, ' ').slice(0, 80);
+}
+
+function agentSnapshot() {
+  const nodes = document.querySelectorAll('a[href], button, input, textarea, select, [role="button"], [onclick]');
+  agentElements = [];
+  const elements = [];
+  for (const el of nodes) {
+    if (!isVisible(el)) continue;
+    const tag = el.tagName.toLowerCase();
+    const type = (el.getAttribute('type') || '').toLowerCase();
+    if (type === 'hidden') continue;
+    const text = elementText(el);
+    if (!text && tag !== 'input' && tag !== 'textarea') continue;
+    const index = agentElements.length;
+    agentElements.push(el);
+    elements.push({
+      index, tag, type,
+      text: text || labelTextFor(el).trim().slice(0, 80),
+      href: tag === 'a' ? (el.getAttribute('href') || '').slice(0, 200) : undefined
+    });
+    if (elements.length >= 50) break;
+  }
+  return { ok: true, url: location.href, title: document.title, elements };
+}
+
+function agentAct(action) {
+  const type = action && action.type;
+  if (type === 'navigate') {
+    if (!/^https?:\/\//i.test(action.url || '')) return { ok: false, error: 'Only http(s) URLs are allowed.' };
+    location.href = action.url;
+    return { ok: true };
+  }
+
+  const el = agentElements[action?.index];
+  if (!el) return { ok: false, error: 'That element index is no longer valid — take a fresh snapshot.' };
+
+  const hay = `${elementText(el)} ${labelTextFor(el)}`;
+  const isSubmitType = (el.getAttribute('type') || '').toLowerCase() === 'submit';
+  if (type === 'click' && (isSubmitType || AGENT_DENYLIST_RE.test(hay))) {
+    return {
+      ok: false,
+      blocked: true,
+      error: "Won't click that — it looks like a submit/pay/delete/subscribe action. Review and do that step yourself."
+    };
+  }
+
+  if (type === 'click') {
+    el.scrollIntoView({ block: 'center' });
+    el.click();
+    return { ok: true };
+  }
+  if (type === 'type') {
+    if (!('value' in el)) return { ok: false, error: 'That element is not a text field.' };
+    setNativeValue(el, String(action.text || ''));
+    return { ok: true };
+  }
+  return { ok: false, error: `Unknown action type: ${type}` };
+}
+
 const api = typeof browser !== 'undefined' ? browser : chrome;
 
 api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg && msg.type === 'autofill') {
     const count = fillForm(msg.profile || {});
     sendResponse({ ok: true, count });
+  } else if (msg && msg.type === 'agentSnapshot') {
+    sendResponse(agentSnapshot());
+  } else if (msg && msg.type === 'agentAct') {
+    sendResponse(agentAct(msg.action));
   }
   return true;
 });
