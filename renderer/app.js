@@ -144,7 +144,7 @@ document.querySelectorAll('.navitem').forEach((b) => {
     const target = document.getElementById('page-' + page);
     if (target) { target.hidden = false; requestAnimationFrame(() => target.classList.add('active')); }
     if (page === 'privacy') loadPrivacy();
-    if (page === 'jarvis') loadJarvis();
+    if (page === 'jarvis') { loadJarvis(); loadJarvisWa(); }
     if (page === 'premium') loadPremium();
   });
 });
@@ -308,6 +308,62 @@ async function saveJarvis(clearGoal = false) {
 
 document.getElementById('saveJarvis').addEventListener('click', () => saveJarvis(false));
 document.getElementById('clearJarvisGoal').addEventListener('click', () => saveJarvis(true));
+
+// ---------- Jarvis Mode: WhatsApp Remote (beta) ----------
+function renderJarvisWaStatus(s) {
+  const statusEl = document.getElementById('jarvisWaStatus');
+  const qrEl = document.getElementById('jarvisWaQr');
+  if (!s || (!s.running && !s.hasQr)) {
+    statusEl.textContent = 'Status: off';
+    qrEl.hidden = true;
+    return;
+  }
+  if (s.ready) {
+    statusEl.textContent = 'Status: connected ✅';
+    qrEl.hidden = true;
+  } else if (s.hasQr) {
+    statusEl.textContent = 'Status: scan this with WhatsApp > Linked devices';
+  } else {
+    statusEl.textContent = 'Status: starting…';
+    qrEl.hidden = true;
+  }
+}
+
+async function loadJarvisWa() {
+  const cfg = await window.buddy.getConfig();
+  document.getElementById('jarvisWaEnabled').checked = !!cfg.jarvisWhatsapp?.enabled;
+  document.getElementById('jarvisWaProjectDir').value = cfg.jarvisWhatsapp?.projectDir || '';
+  const s = await window.buddy.jarvisWhatsappStatus();
+  renderJarvisWaStatus(s);
+}
+
+async function saveJarvisWa() {
+  const settings = {
+    enabled: document.getElementById('jarvisWaEnabled').checked,
+    projectDir: document.getElementById('jarvisWaProjectDir').value.trim()
+  };
+  const btn = document.getElementById('saveJarvisWa');
+  btn.disabled = true;
+  try {
+    const result = await window.buddy.jarvisWhatsappSet(settings);
+    renderJarvisWaStatus(result.status);
+    flash('jarvisWaMsg', settings.enabled ? 'Starting… scan the QR below.' : 'Turned off.');
+  } catch (err) {
+    flash('jarvisWaMsg', `Error: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+  }
+}
+document.getElementById('saveJarvisWa').addEventListener('click', saveJarvisWa);
+
+window.buddy.onJarvisWhatsappEvent((evt) => {
+  const qrEl = document.getElementById('jarvisWaQr');
+  if (evt.type === 'qr' && evt.dataUrl) {
+    qrEl.src = evt.dataUrl;
+    qrEl.hidden = false;
+  }
+  window.buddy.jarvisWhatsappStatus().then(renderJarvisWaStatus);
+});
 
 // ---------- Premium ----------
 function renderPremium(s) {

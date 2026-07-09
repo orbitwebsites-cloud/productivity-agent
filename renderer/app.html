@@ -151,6 +151,35 @@
           <button id="clearJarvisGoal" class="ghostsave">Clear active pursuit</button>
           <span id="jarvisMsg" class="savemsg"></span>
         </div>
+
+        <h1 style="margin-top: 32px;">WhatsApp Remote (beta)</h1>
+        <p class="lead">Text Pesto on WhatsApp and it answers/acts using the exact same brain as
+          this app — "what was I working on today?", "focus on Tech Job for 45 min", plus a couple
+          of <code>!git</code> dev-ops commands.</p>
+        <p class="hint">⚠️ This uses an <b>unofficial</b> WhatsApp Web connection (not Meta's paid
+          API), so it's free — but automating a personal WhatsApp account this way is against
+          WhatsApp's Terms of Service and Meta can ban the linked number. Only messages sent
+          <b>from your own linked phone</b> are ever acted on. Off by default; enable at your own
+          risk.</p>
+
+        <div class="agentbox">
+          <label class="fieldlabel">
+            <input id="jarvisWaEnabled" type="checkbox" /> Enable WhatsApp remote
+          </label>
+
+          <label class="fieldlabel" for="jarvisWaProjectDir">Project directory (for !git commands)</label>
+          <input id="jarvisWaProjectDir" class="field" type="text" spellcheck="false"
+                 placeholder="C:\Users\you\projects\my-app" />
+
+          <p id="jarvisWaStatus" class="hint">Status: off</p>
+          <img id="jarvisWaQr" alt="Scan with WhatsApp > Linked devices" hidden
+               style="width:220px;height:220px;margin-top:8px;border-radius:8px;" />
+        </div>
+
+        <div class="saverow">
+          <button id="saveJarvisWa" class="save">Save WhatsApp remote</button>
+          <span id="jarvisWaMsg" class="savemsg"></span>
+        </div>
       </section>
 
       <section id="page-premium" class="page" hidden>

@@ -30,6 +30,13 @@ contextBridge.exposeInMainWorld('buddy', {
   saveAccountability: (settings) => ipcRenderer.invoke('buddy:saveAccountability', settings),
   saveJarvis: (settings) => ipcRenderer.invoke('buddy:saveJarvis', settings),
   runAction: (actionId) => ipcRenderer.invoke('buddy:runAction', actionId),
+  jarvisWhatsappStatus: () => ipcRenderer.invoke('buddy:jarvisWhatsappStatus'),
+  jarvisWhatsappSet: (settings) => ipcRenderer.invoke('buddy:jarvisWhatsappSet', settings),
+  onJarvisWhatsappEvent: (cb) => {
+    const handler = (_e, evt) => cb(evt);
+    ipcRenderer.on('jarvis:whatsappEvent', handler);
+    return () => ipcRenderer.removeListener('jarvis:whatsappEvent', handler);
+  },
   wardenHide: () => ipcRenderer.invoke('warden:hide'),
   wardenCancel: () => ipcRenderer.invoke('warden:cancel'),
   premiumStatus: () => ipcRenderer.invoke('premium:status'),

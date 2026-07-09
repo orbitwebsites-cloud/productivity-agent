@@ -38,12 +38,20 @@ Edit `pursuits` (your goals + keywords), `distractions`, and per-app `privacyTie
 (`full` / `private` / `off`). Activity is stored in `activity.jsonl` in the same folder.
 
 ## AI Answers
-Pesto uses Hermes as the default local AI provider. First-run setup installs Hermes and starts
-its headless service when possible. If Hermes is installed but no inference provider/model is
-configured, Pesto falls back to deterministic local activity answers.
+This is a **hybrid, decided architecture** (closed out on the `hermes-core-engine-decision` branch):
 
-Premium hosted AI still exists as an optional backend path (`backend/`, live on Vercel) for
-signed-in users with Stripe subscriptions. See `backend/README.md` for server setup.
+- **Free tier — Hermes (local, no account).** First-run setup installs Hermes Agent and starts
+  its headless service (`hermes serve --port 8642`) in the background — no terminal, the app
+  drives it. This is the default `provider` for every fresh install. If Hermes isn't installed/
+  running or no model is configured, Pesto falls back to deterministic local activity answers,
+  so the widget always answers something.
+- **Premium — hosted backend (account + Stripe).** Signing in and subscribing flips `provider`
+  to `backend` (see `electron/premium.js`): the app calls our Vercel API (`backend/`, see
+  `backend/README.md`) instead of the local Hermes gateway. Only tiny text summaries are ever
+  sent, never screenshots.
+
+Hermes isn't a stopgap here — it's the load-bearing free-tier engine, which is why the Electron
+app installs and manages it directly rather than requiring users to touch a CLI.
 
 ## What's intentionally NOT here yet
 Screenshots/AI vision, voice, cloud sync of activity data. See `SPEC.md` for the full plan

@@ -263,9 +263,15 @@ User pays → **our server** runs the AI with **our** key → the desktop app ca
 - We pay per-use; the subscription covers it. Because tracking/answers are local and we only send
   a **tiny text summary** (never screenshots) to the AI, per-call cost is fractions of a cent.
 
-> This supersedes the earlier "self-install local Hermes/Ollama" idea. Local-install fights a
-> paid model (crackable, awkward to keep charging for) — hosted is the coherent choice now that
-> AI is paywalled. Hermes/local can return later as an optional power-user path.
+> This supersedes the earlier "Hermes/Ollama is the *only* AI path" idea, not Hermes itself.
+> **Resolved on `hermes-core-engine-decision` (2026-07-09):** the two aren't in conflict — the
+> shipped architecture is a hybrid, and it's staying that way: **Hermes is the default free-tier
+> engine** (installed + managed by the app, no account, no terminal), and the **hosted backend is
+> the premium engine** (account + Stripe unlocks it, and it's what makes the subscription
+> enforceable — a local model can't be metered). Reopening "should Hermes be the core engine" was
+> considered and rejected: the hosted backend is already built, deployed, and live on Stripe: real
+> money, not a hypothetical. Ripping it out to go all-in on Hermes would trade a working,
+> monetizable system for a CLI dependency, for no product benefit the hybrid doesn't already give.
 
 ### Architecture
 ```

@@ -27,8 +27,20 @@
 - **Supabase:** project `screenbuddy` (`vipextcidorcauhlviig`, us-east-1, free tier).
   `subscriptions` table + RLS applied (migration `create_subscriptions`).
 - **Desktop app wired:** `electron/premium.js` (Supabase email auth from main process, token
-  refresh, checkout, /api/ask). Provider `backend` is the default; deterministic answers remain
-  the offline/signed-out fallback. Premium page = sign in/up, status badge, Upgrade button.
+  refresh, checkout, /api/ask). `provider` starts as `hermes` on every fresh install (free tier,
+  no account — see `electron/config.js` DEFAULTS); `electron/premium.js` flips it to `backend`
+  only once the user signs in **and** subscribes. Deterministic answers remain the offline/
+  signed-out/Hermes-unavailable fallback either way. Premium page = sign in/up, status badge,
+  Upgrade button.
+- **2026-07-09 — Hermes-core-engine decision closed:** reopened the "should Hermes be the core
+  engine" question and rejected a rewrite — the hosted backend is live and charging real Stripe
+  subscriptions, ripping it out for a CLI-dependent engine buys nothing the existing hybrid
+  doesn't already give. Instead found and fixed a real bug: `electron/setup.js` was starting the
+  Hermes gateway on port `9119` while `config.js`/the Hermes `.env` both point the app at `8642`,
+  so free-tier AI answers were silently falling back to the slower `hermes -z` CLI path every
+  time. Also bumped `hermes.js`'s HTTP timeout from 2.5s → 25s (was discarding valid slow local
+  responses). `README.md`/`SPEC.md` §13 reconciled to describe the real hybrid instead of
+  contradicting it.
 
 ### ✅ Premium fully wired + LIVE — done 2026-07-08
 User's own Supabase project **`screenbud`** (`bmqhokhibnjdiwvycfxw`, us-west-2) is now the one
@@ -57,7 +69,27 @@ frictionless sign-up (currently requires clicking an email link before first sig
 - Local app: `electron/{main,tracker,activewin,accountability,db,classify,answers,capture,
   appscan,appknowledge,premium,setup,config,preload}.js`, `electron/providers/*`, `renderer/*`
 - Backend: `backend/` (+ root `api/` shims, `vercel.json`, `.vercelignore`)
-- Old Hermes/Ollama provider path still exists as a power-user option (unused by default).
+- Hermes is the free-tier default (not a legacy/unused path — see 2026-07-09 note above); Ollama
+  and generic OpenAI-compatible providers remain manual power-user options in Settings.
+- WhatsApp Jarvis remote-agent: `electron/jarvis-whatsapp.js`, wired via IPC
+  (`buddy:jarvisWhatsapp*`) + Settings > Jarvis Mode > "WhatsApp Remote (beta)". Off by default.
+  Shares the exact same `buddyAsk()` brain as the in-app chat panel (main.js), plus scoped
+  `!git status` / `!git push` dev-ops commands (spawn with argv arrays, never shell strings).
+  Only ever acts on `message.fromMe` — i.e. messages sent from the phone that scanned the
+  pairing QR — and refuses (doesn't attempt) requests to auto-complete courses/quizzes or
+  blind-submit forms with personal data.
+  **Deliberately NOT wired into `build.files`/the installer yet:** `npm install` pulled in
+  `whatsapp-web.js` → `puppeteer`, which downloaded **~626MB of bundled Chromium** to
+  `~/.cache/puppeteer`. Bundling that into the NSIS installer would roughly triple its size, and
+  I have no Windows/Mac box here to verify the packaged (asar) build actually launches Puppeteer
+  correctly or that QR pairing works end-to-end with a real phone. Works today via `npm start`
+  (dev). Before shipping it in a real build: test pairing + a round-trip command on a real
+  machine, then add the needed `node_modules/{whatsapp-web.js,puppeteer,puppeteer-core,...}`
+  paths to `package.json`'s `build.files`.
+- Also fixed while working on the above: `electron/setup.js` hardcoded `hermes serve --port 9119`
+  while `config.js`/the Hermes `.env` point at `8642` — free-tier Hermes answers were silently
+  falling back to the slow CLI path every time. And `hermes.js`'s HTTP timeout was 2.5s, too
+  short for genuine local inference — bumped to 25s.
 
 ## Run / build
 - Dev: `npm start` · Build exe: `npm run build:win` -> `dist\ScreenBuddy 0.1.0.exe`

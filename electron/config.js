@@ -55,6 +55,14 @@ const DEFAULTS = {
     restoreWindowLimit: 3
   },
 
+  // Opt-in remote control over WhatsApp (see electron/jarvis-whatsapp.js). Off by
+  // default — uses an unofficial WhatsApp Web client, which is a real account-ban risk
+  // the user has to knowingly accept in Settings before pairing.
+  jarvisWhatsapp: {
+    enabled: false,
+    projectDir: ''
+  },
+
   // Premium - hosted AI. Sign in (Supabase) + subscription (Stripe) unlock
   // natural-language answers from our backend. Only tiny text summaries are
   // ever sent; the anon key below is publishable by design.

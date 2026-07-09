@@ -10,6 +10,7 @@ const setup = require('./setup');
 const accountability = require('./accountability');
 const premium = require('./premium');
 const updater = require('./updater');
+const jarvisWhatsapp = require('./jarvis-whatsapp');
 const { minimizeActiveWindow, activateWindow, launchOrActivateApp } = require('./activewin');
 
 const ASSET = (f) => path.join(__dirname, '..', 'assets', 'pesto', f);
@@ -241,6 +242,12 @@ function startBuddyRuntime() {
     accountability.onSample(cfg, sample);
   });
   buddyStarted = true;
+
+  const cfg = loadConfig();
+  if (jarvisWhatsapp.isEnabled(cfg)) {
+    jarvisWhatsapp.start(cfg, { ask: buddyAsk, notify: forwardJarvisWhatsappEvent })
+      .catch((err) => notify('Pesto', `Jarvis WhatsApp remote failed to start: ${err.message}`));
+  }
 }
 
 app.whenReady().then(() => {
@@ -255,7 +262,7 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => { /* stay resident in the tray */ });
-app.on('will-quit', () => { globalShortcut.unregisterAll(); tracker.stop(); });
+app.on('will-quit', () => { globalShortcut.unregisterAll(); tracker.stop(); jarvisWhatsapp.stop(); });
 
 // ---- orb IPC (custom click-vs-drag handling) ----
 ipcMain.handle('orb:toggle', () => togglePanel());
@@ -352,12 +359,16 @@ async function handleJarvisQuestion(question) {
   return null;
 }
 
-// ---- panel IPC ----
-ipcMain.handle('buddy:ask', async (_e, question) => {
+// Shared brain behind both the in-app chat panel and the WhatsApp remote (below) —
+// one place that owns "what does a question/command from the user actually do."
+async function buddyAsk(question) {
   const jarvis = await handleJarvisQuestion(question);
   if (jarvis) return jarvis;
   return answers.answer(question, loadConfig());
-});
+}
+
+// ---- panel IPC ----
+ipcMain.handle('buddy:ask', (_e, question) => buddyAsk(question));
 ipcMain.handle('buddy:today', () => {
   const start = answers.startOfDay(Date.now());
   const s = answers.summarize(start, Date.now());
@@ -618,6 +629,33 @@ ipcMain.handle('buddy:saveJarvis', (event, settings) => {
   accountability.reset();
   refreshTray();
   return cfg;
+});
+
+// ---- Jarvis WhatsApp remote (opt-in, off by default — see jarvis-whatsapp.js) ----
+function forwardJarvisWhatsappEvent(evt) {
+  if (appWin && !appWin.isDestroyed()) appWin.webContents.send('jarvis:whatsappEvent', evt);
+}
+
+ipcMain.handle('buddy:jarvisWhatsappStatus', () => jarvisWhatsapp.status());
+
+ipcMain.handle('buddy:jarvisWhatsappSet', async (event, settings) => {
+  requireAppWindow(event);
+  const cur = loadConfig();
+  const enabled = !!settings?.enabled;
+  const cfg = saveConfig({
+    jarvisWhatsapp: {
+      ...(cur.jarvisWhatsapp || {}),
+      enabled,
+      projectDir: typeof settings?.projectDir === 'string' ? settings.projectDir : (cur.jarvisWhatsapp?.projectDir || '')
+    }
+  });
+
+  if (enabled) {
+    await jarvisWhatsapp.start(cfg, { ask: buddyAsk, notify: forwardJarvisWhatsappEvent });
+  } else {
+    await jarvisWhatsapp.stop();
+  }
+  return { config: cfg, status: jarvisWhatsapp.status() };
 });
 
 async function restoreWorkspace(label) {
