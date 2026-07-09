@@ -85,15 +85,30 @@ async function startHermesGateway() {
     const ps = findPowerShell();
     const script = [
       "$ErrorActionPreference = 'Stop'",
+      // The installer (installHermes, above) updates PATH in the registry, but
+      // this process's own $env:Path is a stale snapshot inherited from whatever
+      // launched ScreenBuddy.exe *before* that happened — Get-Command would miss
+      // a hermes.exe that's genuinely on PATH. Re-read PATH from the registry
+      // (Machine + User) before searching, same fix as Chocolatey's `refreshenv`.
+      "$env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')",
       '$cmd = Get-Command hermes -ErrorAction SilentlyContinue',
       '$candidates = @()',
       'if ($cmd) { $candidates += $cmd.Source }',
       '$candidates += (Join-Path $env:USERPROFILE ".hermes\\bin\\hermes.exe")',
+      '$candidates += (Join-Path $env:USERPROFILE ".hermes\\hermes.exe")',
       '$candidates += (Join-Path $env:LOCALAPPDATA "Programs\\Hermes\\hermes.exe")',
       '$candidates += (Join-Path $env:LOCALAPPDATA "hermes\\hermes.exe")',
+      '$candidates += (Join-Path $env:LOCALAPPDATA "hermes-agent\\hermes.exe")',
+      '$candidates += (Join-Path $env:USERPROFILE ".local\\bin\\hermes.exe")',
+      '$candidates += (Join-Path ${env:ProgramFiles} "Hermes\\hermes.exe")',
       '$candidates = $candidates | Where-Object { $_ -and (Test-Path $_) }',
       '$exe = $candidates | Select-Object -First 1',
-      'if (-not $exe) { throw "Hermes installed, but hermes.exe was not found on PATH or common install paths." }',
+      'if (-not $exe) {',
+      '  $found = Get-ChildItem -Path $env:USERPROFILE,$env:LOCALAPPDATA -Filter hermes.exe -Recurse -ErrorAction SilentlyContinue -Depth 4 | Select-Object -First 3 -ExpandProperty FullName',
+      '  if ($found) { $hint = "Found via search instead: " + ($found -join "; ") + " -- update setup.js with this real path." }',
+      '  else { $hint = "No hermes.exe found anywhere under USERPROFILE or LOCALAPPDATA -- the install step likely failed silently." }',
+      '  throw "Hermes installed, but hermes.exe was not found on PATH or common install paths. $hint"',
+      '}',
       'Start-Process -FilePath $exe -ArgumentList "serve --skip-build --host 127.0.0.1 --port 8642" -WindowStyle Hidden'
     ].join('\n');
     return run(ps, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script]);
