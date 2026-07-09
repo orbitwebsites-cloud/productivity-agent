@@ -1,8 +1,8 @@
 'use strict';
 
 const downloads = {
-  win32: '/downloads/ScreenBuddy-0.1.0-beta-win-x64.exe',
-  darwin: '/downloads/ScreenBuddy-0.1.0-beta-win-x64.exe'
+  win32: 'https://bglwicwloz5njbgs.public.blob.vercel-storage.com/releases/ScreenBuddy-Setup-0.1.1.exe',
+  darwin: 'https://bglwicwloz5njbgs.public.blob.vercel-storage.com/releases/ScreenBuddy-Setup-0.1.1.exe'
 };
 
 const platform = navigator.userAgentData?.platform || navigator.platform || '';

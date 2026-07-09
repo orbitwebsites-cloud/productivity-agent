@@ -9,6 +9,7 @@ const providers = require('./providers');
 const setup = require('./setup');
 const accountability = require('./accountability');
 const premium = require('./premium');
+const updater = require('./updater');
 const { minimizeActiveWindow, activateWindow, launchOrActivateApp } = require('./activewin');
 
 const ASSET = (f) => path.join(__dirname, '..', 'assets', 'pesto', f);
@@ -249,6 +250,7 @@ app.whenReady().then(() => {
   if (setupIsReady()) startBuddyRuntime();
   else showApp();
   globalShortcut.register('Alt+Space', togglePanel);
+  updater.init();
   app.on('activate', () => { if (setupIsReady() && !orb) createOrb(); else showApp(); });
 });
 
