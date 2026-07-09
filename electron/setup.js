@@ -94,6 +94,9 @@ async function startHermesGateway() {
       '$cmd = Get-Command hermes -ErrorAction SilentlyContinue',
       '$candidates = @()',
       'if ($cmd) { $candidates += $cmd.Source }',
+      // Confirmed real install location (2026-07-09, actual Windows machine): a
+      // Python venv under LOCALAPPDATA. Check this before the other guessed paths.
+      '$candidates += (Join-Path $env:LOCALAPPDATA "hermes\\hermes-agent\\venv\\Scripts\\hermes.exe")',
       '$candidates += (Join-Path $env:USERPROFILE ".hermes\\bin\\hermes.exe")',
       '$candidates += (Join-Path $env:USERPROFILE ".hermes\\hermes.exe")',
       '$candidates += (Join-Path $env:LOCALAPPDATA "Programs\\Hermes\\hermes.exe")',
