@@ -568,7 +568,10 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForHermes(config, timeoutMs = 20000) {
+// 20s was too tight for a first-run Python venv cold start (imports/model load
+// can genuinely take longer than that) -- was reporting "failed" on machines
+// that just needed a bit more time, not machines that were actually broken.
+async function waitForHermes(config, timeoutMs = 90000) {
   const deadline = Date.now() + timeoutMs;
   let lastError = null;
   while (Date.now() < deadline) {

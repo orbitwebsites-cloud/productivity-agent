@@ -186,6 +186,32 @@ frictionless sign-up (currently requires clicking an email link before first sig
   account) is actually what's wanted instead, that's a bigger, different change — say so and
   I'll do that version instead.
 
+- **First real Windows setup failure, root-caused and fixed** (2026-07-09): "Start Pesto"
+  failed with `hermes.exe was not found on PATH or common install paths` on an actual machine
+  — the first real end-to-end test this flow ever got (SPEC.md had flagged it as unverified).
+  Root cause confirmed on that machine (not guessed): a fresh PowerShell window found
+  `hermes` on PATH fine, meaning the *installing* process's own environment was stale —
+  ScreenBuddy.exe was already running when the installer updated PATH in the registry, so
+  PowerShell children it spawns inherit the old snapshot, not a live read. Fixed by re-reading
+  PATH from the registry before searching (`electron/setup.js`, same trick as Chocolatey's
+  `refreshenv`), confirmed real install path added as an explicit fallback
+  (`%LOCALAPPDATA%\hermes\hermes-agent\venv\Scripts\hermes.exe` — a Python venv), and a
+  still-failing search is now self-diagnosing (reports what it actually found).
+  Two more of the same bug class fixed proactively, not yet hit by a real user:
+  - Mac/Linux's `startHermesGateway` only ever checked `command -v hermes` with zero fallback
+    or diagnostics — brought up to the same standard as Windows (candidate paths + bounded
+    `find` search + descriptive error), though unlike Windows this hasn't been verified on a
+    real Mac/Linux machine yet.
+  - `waitForHermes`'s post-install check (`electron/providers/hermes.js`'s `health()`) shelled
+    out to bare `hermes version`, which hits the *exact same* stale-PATH problem one level
+    further in — even after the gateway starts successfully via an absolute path, this
+    verification step could still fail and wrongly report setup as "failed." Rewrote it to
+    probe the HTTP gateway directly (any response, even an error status, proves the port's
+    listening) instead of depending on PATH resolution at all. Also bumped the 20s wait
+    timeout to 90s — a Python venv cold start (imports, model load) can genuinely take longer
+    than 20s on a slower machine, which would misreport "failed" on a machine that just needed
+    more time.
+
 ## Run / build
 - Dev: `npm start` · Build exe: `npm run build:win` -> `dist\ScreenBuddy 0.1.0.exe`
 - Backend redeploy: `npx vercel deploy --prod --yes` from repo root (CLI is authed).

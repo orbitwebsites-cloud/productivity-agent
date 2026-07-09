@@ -103,7 +103,31 @@ async function chat(args) {
   return cliChat(args);
 }
 
-async function health() {
+// Checks whether the local Hermes gateway is actually up and accepting
+// connections. Prefer a direct HTTP probe over shelling out to `hermes version`:
+// spawn() resolves bare command names against *this process's* PATH, which is a
+// stale snapshot from whenever Electron itself launched — right after a fresh
+// install, that snapshot predates the installer's PATH update, so a CLI-based
+// check fails even though the gateway (started via an absolute resolved path in
+// setup.js) is genuinely running. Any HTTP response at all, even an error
+// status, proves the port is listening, which is all this actually needs to know.
+async function health({ baseUrl, apiKey } = {}) {
+  if (baseUrl) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    try {
+      const res = await fetch(baseUrl.replace(/\/$/, ''), {
+        headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
+        signal: controller.signal
+      });
+      return { ok: true, version: `http ${res.status}` };
+    } catch {
+      // Gateway isn't listening yet (or baseUrl is wrong) — fall through to the
+      // CLI check, which at least works once PATH is no longer stale.
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
   const { stdout } = await run('hermes', ['version'], { timeoutMs: 30000 });
   return { ok: true, version: stdout.trim() };
 }

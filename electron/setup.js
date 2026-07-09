@@ -116,7 +116,41 @@ async function startHermesGateway() {
     ].join('\n');
     return run(ps, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script]);
   }
-  const script = 'if command -v hermes >/dev/null 2>&1; then nohup hermes serve --skip-build --host 127.0.0.1 --port 8642 >/tmp/screenbuddy-hermes.log 2>&1 & else echo "Hermes installed, but hermes was not found on PATH." >&2; exit 1; fi';
+  // Same defense-in-depth as the Windows branch above: PATH alone (`command -v`)
+  // is what originally failed on a real Windows machine because a freshly
+  // installed tool wasn't visible to the process that just installed it. `-lc`
+  // (login shell) should re-source profile files and avoid that specific
+  // failure mode here, but this path hasn't been verified on a real Mac/Linux
+  // machine yet, so don't rely on PATH alone — check plausible install
+  // locations directly, and if none hit, do a bounded search and report exactly
+  // what was found instead of a dead-end error.
+  const script = [
+    'set -e',
+    'HOME_DIR="$HOME"',
+    'CANDIDATES=(',
+    '  "$(command -v hermes 2>/dev/null || true)"',
+    '  "$HOME_DIR/.hermes/hermes-agent/venv/bin/hermes"',
+    '  "$HOME_DIR/.hermes/bin/hermes"',
+    '  "$HOME_DIR/.local/bin/hermes"',
+    '  "$HOME_DIR/Library/Application Support/hermes/hermes-agent/venv/bin/hermes"',
+    '  "/usr/local/bin/hermes"',
+    '  "/opt/homebrew/bin/hermes"',
+    ')',
+    'EXE=""',
+    'for c in "${CANDIDATES[@]}"; do',
+    '  if [ -n "$c" ] && [ -x "$c" ]; then EXE="$c"; break; fi',
+    'done',
+    'if [ -z "$EXE" ]; then',
+    '  FOUND=$(find "$HOME_DIR" -maxdepth 6 -iname "hermes" -type f 2>/dev/null | head -3)',
+    '  if [ -n "$FOUND" ]; then',
+    '    echo "Hermes installed, but hermes was not found on PATH or common install paths. Found via search instead: $FOUND -- update setup.js with this real path." >&2',
+    '  else',
+    '    echo "Hermes installed, but hermes was not found on PATH or common install paths, and a search under \\$HOME found nothing -- the install step likely failed silently." >&2',
+    '  fi',
+    '  exit 1',
+    'fi',
+    'nohup "$EXE" serve --skip-build --host 127.0.0.1 --port 8642 >/tmp/screenbuddy-hermes.log 2>&1 &'
+  ].join('\n');
   return run('/bin/sh', ['-lc', script]);
 }
 
