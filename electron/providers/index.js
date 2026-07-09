@@ -82,6 +82,19 @@ async function answerQuestion(config, question, summaryText) {
   return callProvider(config, { system: CHAT_SYSTEM_PROMPT, user });
 }
 
+// Custom system+user prompt on the local engine only (Hermes/Ollama/OpenAI-compat) —
+// used by electron/browser-agent.js for structured "decide the next click/type"
+// prompts. The premium backend (backend/api/ask.js) has its own fixed, narrower
+// activity-coaching prompt by design (see prompts.js's CHAT_SYSTEM_PROMPT comment);
+// it doesn't accept an arbitrary system prompt, so this stays local-only rather than
+// silently degrading into a request the backend was never built to answer.
+async function rawChat(config, { system, user }) {
+  if (config.provider === 'backend') {
+    throw new Error('This needs the local Hermes engine — switch providers in Settings.');
+  }
+  return callProvider(config, { system, user });
+}
+
 async function testProvider(config) {
   if (config.provider === 'backend') {
     const s = await require('../premium').status();
@@ -101,4 +114,4 @@ async function testProvider(config) {
   return { ok: true, provider: config.provider || 'ollama', text };
 }
 
-module.exports = { callProvider, classifyScreenshot, answerQuestion, parseClassification, testProvider };
+module.exports = { callProvider, classifyScreenshot, answerQuestion, rawChat, parseClassification, testProvider };

@@ -60,7 +60,7 @@ async function httpChat({ baseUrl, apiKey, model, system, user, imageBase64, ses
   if (sessionKey) headers['X-Hermes-Session-Key'] = sessionKey;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 2500);
+  const timeout = setTimeout(() => controller.abort(), 25000);
   try {
     const res = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST',

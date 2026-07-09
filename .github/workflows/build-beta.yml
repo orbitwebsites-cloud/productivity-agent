@@ -1,0 +1,49 @@
+name: Build beta installers
+
+# Builds ScreenBuddy on GitHub's real Windows and macOS runners (not a local machine,
+# not this repo's dev sandbox — both are needed for a working, native installer per OS;
+# cross-building macOS from Windows/Linux is unreliable and unsigned Mac apps in
+# particular need to actually run through Apple's own toolchain during packaging).
+#
+# Trigger manually from the Actions tab ("Run workflow") whenever you need a fresh
+# beta build to hand to a tester. Also runs on version tags (v*) for convenience.
+# Download the installers from the finished run's "Artifacts" section.
+
+on:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build:mac -- --publish=never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ScreenBuddy-mac
+          path: dist/*.dmg
+          if-no-files-found: error
+
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build:win -- --publish=never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ScreenBuddy-windows
+          path: dist/*.exe
+          if-no-files-found: error

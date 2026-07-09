@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "ScreenBuddy Jarvis Autofill",
+  "version": "0.1.0",
+  "description": "Fills web forms from your saved ScreenBuddy profile for you to review — it never submits anything on its own.",
+  "permissions": ["activeTab"],
+  "host_permissions": ["http://127.0.0.1:8643/*"],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ScreenBuddy Jarvis Autofill"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "jarvis-autofill@screenbuddy.orbitboyzz.me",
+      "strict_min_version": "115.0"
+    }
+  }
+}

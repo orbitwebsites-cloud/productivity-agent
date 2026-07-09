@@ -12,6 +12,7 @@ let lastSetupError = '';
 const setupGate = document.getElementById('setupGate');
 const setupWelcome = document.getElementById('setupWelcome');
 const setupSad = document.getElementById('setupSad');
+const setupAccount = document.getElementById('setupAccount');
 const shell = document.querySelector('.shell');
 const openHelpBtn = document.getElementById('openSetupHelp');
 
@@ -68,10 +69,14 @@ async function finishProgress() {
 
 function applySetupState(cfg) {
   const status = cfg.setup?.status || 'pending';
-  setupReady = status === 'ready';
+  const setupDone = status === 'ready';
+  const needsAccountPrompt = setupDone && !cfg.onboarding?.accountPromptDone;
+  setupReady = setupDone && !needsAccountPrompt;
+
   setupGate.hidden = setupReady;
   shell.hidden = !setupReady;
-  setupWelcome.hidden = status === 'declined';
+  setupAccount.hidden = !needsAccountPrompt;
+  setupWelcome.hidden = needsAccountPrompt || status === 'declined';
   setupSad.hidden = status !== 'declined';
   const msg = document.getElementById('setupMsg');
   if (status === 'failed' && cfg.setup?.lastError) {
@@ -134,6 +139,51 @@ document.getElementById('retrySetup').addEventListener('click', async () => {
   setupSad.hidden = true;
 });
 
+// ---------- onboarding: skippable account prompt (after setup finishes) ----------
+async function finishOnboarding() {
+  const cfg = await window.buddy.completeOnboarding();
+  applySetupState(cfg);
+  await loadPursuits();
+}
+
+async function onbAuth(kind) {
+  const email = document.getElementById('onbEmail').value.trim();
+  const password = document.getElementById('onbPass').value;
+  const msg = document.getElementById('onbMsg');
+  if (!email || !password) { msg.textContent = 'Enter your email and a password.'; return; }
+  msg.textContent = kind === 'signup' ? 'Creating your account…' : 'Signing in…';
+  try {
+    const s = kind === 'signup'
+      ? await window.buddy.premiumSignUp(email, password)
+      : await window.buddy.premiumSignIn(email, password);
+    if (s.needsEmailConfirm) {
+      msg.textContent = `Almost there — check ${s.email} for a confirmation link, then sign in from the Premium page later.`;
+      return;
+    }
+    await finishOnboarding();
+  } catch (err) {
+    msg.textContent = `Hmm: ${err.message || err}`;
+  }
+}
+
+document.getElementById('onbSignUp').addEventListener('click', () => onbAuth('signup'));
+document.getElementById('onbSignIn').addEventListener('click', () => onbAuth('signin'));
+document.getElementById('onbGoogle').addEventListener('click', async () => {
+  const msg = document.getElementById('onbMsg');
+  const btn = document.getElementById('onbGoogle');
+  btn.disabled = true;
+  msg.textContent = 'Opening Google sign-in in your browser…';
+  try {
+    await window.buddy.premiumSignInGoogle();
+    await finishOnboarding();
+  } catch (err) {
+    msg.textContent = `Google sign-in failed: ${err.message || err}`;
+  } finally {
+    btn.disabled = false;
+  }
+});
+document.getElementById('onbSkip').addEventListener('click', () => finishOnboarding());
+
 // ---------- nav ----------
 document.querySelectorAll('.navitem').forEach((b) => {
   b.addEventListener('click', () => {
@@ -144,7 +194,7 @@ document.querySelectorAll('.navitem').forEach((b) => {
     const target = document.getElementById('page-' + page);
     if (target) { target.hidden = false; requestAnimationFrame(() => target.classList.add('active')); }
     if (page === 'privacy') loadPrivacy();
-    if (page === 'jarvis') loadJarvis();
+    if (page === 'jarvis') { loadJarvis(); loadJarvisWa(); loadAutofill(); }
     if (page === 'premium') loadPremium();
   });
 });
@@ -309,6 +359,97 @@ async function saveJarvis(clearGoal = false) {
 document.getElementById('saveJarvis').addEventListener('click', () => saveJarvis(false));
 document.getElementById('clearJarvisGoal').addEventListener('click', () => saveJarvis(true));
 
+// ---------- Jarvis Mode: WhatsApp Remote (beta) ----------
+function renderJarvisWaStatus(s) {
+  const statusEl = document.getElementById('jarvisWaStatus');
+  const qrEl = document.getElementById('jarvisWaQr');
+  if (!s || (!s.running && !s.hasQr)) {
+    statusEl.textContent = 'Status: off';
+    qrEl.hidden = true;
+    return;
+  }
+  if (s.ready) {
+    statusEl.textContent = 'Status: connected ✅';
+    qrEl.hidden = true;
+  } else if (s.hasQr) {
+    statusEl.textContent = 'Status: scan this with WhatsApp > Linked devices';
+  } else {
+    statusEl.textContent = 'Status: starting…';
+    qrEl.hidden = true;
+  }
+}
+
+async function loadJarvisWa() {
+  const cfg = await window.buddy.getConfig();
+  document.getElementById('jarvisWaEnabled').checked = !!cfg.jarvisWhatsapp?.enabled;
+  document.getElementById('jarvisWaProjectDir').value = cfg.jarvisWhatsapp?.projectDir || '';
+  const s = await window.buddy.jarvisWhatsappStatus();
+  renderJarvisWaStatus(s);
+}
+
+async function saveJarvisWa() {
+  const settings = {
+    enabled: document.getElementById('jarvisWaEnabled').checked,
+    projectDir: document.getElementById('jarvisWaProjectDir').value.trim()
+  };
+  const btn = document.getElementById('saveJarvisWa');
+  btn.disabled = true;
+  try {
+    const result = await window.buddy.jarvisWhatsappSet(settings);
+    renderJarvisWaStatus(result.status);
+    flash('jarvisWaMsg', settings.enabled ? 'Starting… scan the QR below.' : 'Turned off.');
+  } catch (err) {
+    flash('jarvisWaMsg', `Error: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+  }
+}
+document.getElementById('saveJarvisWa').addEventListener('click', saveJarvisWa);
+
+window.buddy.onJarvisWhatsappEvent((evt) => {
+  const qrEl = document.getElementById('jarvisWaQr');
+  if (evt.type === 'qr' && evt.dataUrl) {
+    qrEl.src = evt.dataUrl;
+    qrEl.hidden = false;
+  }
+  window.buddy.jarvisWhatsappStatus().then(renderJarvisWaStatus);
+});
+
+// ---------- Jarvis Mode: Browser Autofill (beta) ----------
+const AUTOFILL_FIELDS = ['firstName', 'lastName', 'email', 'phone', 'discord', 'ign', 'age', 'school', 'address'];
+const autofillInputId = (key) => `af${key[0].toUpperCase()}${key.slice(1)}`;
+
+async function loadAutofill() {
+  const cfg = await window.buddy.getConfig();
+  document.getElementById('autofillEnabled').checked = !!cfg.autofill?.enabled;
+  const profile = cfg.autofill?.profile || {};
+  AUTOFILL_FIELDS.forEach((key) => {
+    const el = document.getElementById(autofillInputId(key));
+    if (el) el.value = profile[key] || '';
+  });
+}
+
+async function saveAutofill() {
+  const profile = {};
+  AUTOFILL_FIELDS.forEach((key) => {
+    const el = document.getElementById(autofillInputId(key));
+    if (el) profile[key] = el.value.trim();
+  });
+  const settings = { enabled: document.getElementById('autofillEnabled').checked, profile };
+  try {
+    await window.buddy.autofillSet(settings);
+    flash('autofillMsg', settings.enabled ? 'Saved. Bridge is running.' : 'Saved. Bridge is off.');
+  } catch (err) {
+    flash('autofillMsg', `Error: ${err.message}`);
+  }
+}
+document.getElementById('saveAutofill').addEventListener('click', saveAutofill);
+
+document.getElementById('testAutofill').addEventListener('click', async () => {
+  const result = await window.buddy.autofillTrigger();
+  flash('autofillMsg', result?.text || 'Done.');
+});
+
 // ---------- Premium ----------
 function renderPremium(s) {
   const signedOut = document.getElementById('premSignedOut');
@@ -320,12 +461,12 @@ function renderPremium(s) {
   const badge = document.getElementById('premBadge');
   badge.textContent = s.premium ? '✨ Premium' : 'Free';
   badge.className = `prem-badge ${s.premium ? 'premium' : 'free'}`;
-  document.getElementById('premUpgrade').hidden = !!s.premium;
+  document.getElementById('premPlans').hidden = !!s.premium;
   document.getElementById('premHint').textContent = s.premium
     ? 'AI answers are on — ask Pesto anything in the widget (Alt+Space).'
     : s.error
       ? `Signed in, but I couldn't reach the Premium server: ${s.error}`
-      : 'Upgrade to unlock AI answers. Payment opens in your browser.';
+      : 'Pick a plan to start your 7-day free trial. Payment opens in your browser.';
 }
 
 async function loadPremium() {
@@ -360,23 +501,40 @@ async function premAuth(kind) {
 document.getElementById('premSignIn').addEventListener('click', () => premAuth('signin'));
 document.getElementById('premSignUp').addEventListener('click', () => premAuth('signup'));
 document.getElementById('premPassIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') premAuth('signin'); });
+document.getElementById('premSignInGoogle').addEventListener('click', async () => {
+  const msg = document.getElementById('premMsg');
+  const btn = document.getElementById('premSignInGoogle');
+  btn.disabled = true;
+  msg.textContent = 'Opening Google sign-in in your browser…';
+  try {
+    renderPremium(await window.buddy.premiumSignInGoogle());
+    msg.textContent = '';
+  } catch (err) {
+    msg.textContent = `Google sign-in failed: ${err.message || err}`;
+  } finally {
+    btn.disabled = false;
+  }
+});
 document.getElementById('premSignOutBtn').addEventListener('click', async () => {
   renderPremium(await window.buddy.premiumSignOut());
 });
 document.getElementById('premRefresh').addEventListener('click', loadPremium);
-document.getElementById('premUpgrade').addEventListener('click', async () => {
+
+async function startCheckout(plan) {
   const msg = document.getElementById('premMsg');
   msg.textContent = 'Opening checkout in your browser…';
   try {
-    const r = await window.buddy.premiumUpgrade();
+    const r = await window.buddy.premiumUpgrade(plan);
     msg.textContent = r.alreadyPremium
       ? "You're already Premium! 🎉"
-      : 'Finish payment in the browser, then hit “Refresh status”.';
+      : 'Finish in the browser, then hit “Refresh status”. No charge until your 7-day trial ends.';
     if (r.alreadyPremium) loadPremium();
   } catch (err) {
     msg.textContent = `Couldn't start checkout: ${err.message || err}`;
   }
-});
+}
+document.getElementById('premUpgradeMonthly').addEventListener('click', () => startCheckout('monthly'));
+document.getElementById('premUpgradeAnnual').addEventListener('click', () => startCheckout('annual'));
 
 // ---------- helpers ----------
 function escapeHtml(s) {

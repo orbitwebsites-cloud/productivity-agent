@@ -45,7 +45,9 @@ if (missing.length) {
   console.error(`\n.env is missing: ${missing.join(', ')}`);
   process.exit(1);
 }
-const priceUsd = Number(env.PREMIUM_PRICE_USD || '4.99');
+const priceUsd = Number(env.PREMIUM_PRICE_USD || '14.99');
+const annualPriceUsd = Number(env.PREMIUM_PRICE_ANNUAL_USD || '119.88'); // ~$9.99/mo
+const trialDays = Number(env.TRIAL_DAYS || '7');
 
 // ---- Stripe API (form-encoded fetch) ----
 async function stripe(method, pathName, params) {
@@ -68,7 +70,7 @@ async function stripe(method, pathName, params) {
   return data;
 }
 
-async function ensureProductAndPrice() {
+async function ensureProduct() {
   const products = await stripe('GET', 'products?active=true&limit=100');
   let product = (products.data || []).find((p) => p.name === PRODUCT_NAME);
   if (product) {
@@ -80,22 +82,28 @@ async function ensureProductAndPrice() {
     });
     console.log(`✓ Created product: ${product.id}`);
   }
+  return product;
+}
 
-  const unitAmount = Math.round(priceUsd * 100);
+// Finds an existing price at this exact amount/interval, or creates one. Never edits/deletes
+// an old price (e.g. a previous $4.99/mo) — Stripe prices are immutable once used, and
+// existing subscribers, if any, should keep billing at what they signed up for.
+async function ensurePrice(product, usdAmount, interval, label) {
+  const unitAmount = Math.round(usdAmount * 100);
   const prices = await stripe('GET', `prices?product=${product.id}&active=true&limit=100`);
   let price = (prices.data || []).find(
-    (p) => p.recurring && p.recurring.interval === 'month' && p.unit_amount === unitAmount && p.currency === 'usd'
+    (p) => p.recurring && p.recurring.interval === interval && p.unit_amount === unitAmount && p.currency === 'usd'
   );
   if (price) {
-    console.log(`✓ Price exists: ${price.id} ($${priceUsd}/mo)`);
+    console.log(`✓ ${label} price exists: ${price.id} ($${usdAmount}/${interval})`);
   } else {
     price = await stripe('POST', 'prices', {
       product: product.id,
       unit_amount: String(unitAmount),
       currency: 'usd',
-      'recurring[interval]': 'month'
+      'recurring[interval]': interval
     });
-    console.log(`✓ Created price: ${price.id} ($${priceUsd}/mo)`);
+    console.log(`✓ Created ${label} price: ${price.id} ($${usdAmount}/${interval})`);
   }
   return price.id;
 }
@@ -140,7 +148,9 @@ function pushEnv(name, value) {
 
 (async () => {
   console.log(`\n— Stripe setup (${env.STRIPE_SECRET_KEY.startsWith('sk_live') ? 'LIVE' : 'TEST'} mode) —`);
-  const priceId = await ensureProductAndPrice();
+  const product = await ensureProduct();
+  const monthlyPriceId = await ensurePrice(product, priceUsd, 'month', 'Monthly');
+  const annualPriceId = await ensurePrice(product, annualPriceUsd, 'year', 'Annual');
   const webhookSecret = await ensureWebhook();
 
   console.log('\n— Pushing env vars to Vercel —');
@@ -150,7 +160,9 @@ function pushEnv(name, value) {
   if (env.LLM_BASE_URL) pushEnv('LLM_BASE_URL', env.LLM_BASE_URL);
   if (env.LLM_MODEL) pushEnv('LLM_MODEL', env.LLM_MODEL);
   pushEnv('STRIPE_SECRET_KEY', env.STRIPE_SECRET_KEY);
-  pushEnv('STRIPE_PRICE_ID', priceId);
+  pushEnv('STRIPE_PRICE_ID', monthlyPriceId);
+  pushEnv('STRIPE_PRICE_ID_ANNUAL', annualPriceId);
+  pushEnv('TRIAL_DAYS', String(trialDays));
   pushEnv('STRIPE_WEBHOOK_SECRET', webhookSecret);
 
   console.log('\n— Redeploying production —');
@@ -159,6 +171,6 @@ function pushEnv(name, value) {
   const m = (d.stdout + d.stderr).match(/https:\/\/[^\s]*vercel\.app/);
   console.log(`✓ Deployed${m ? ': ' + m[0] : ''}`);
 
-  console.log(`\nALL DONE ✅  Premium is live at ${BACKEND_URL}`);
-  console.log('Test it: open ScreenBuddy → Premium ✨ → create account → Upgrade.');
+  console.log(`\nALL DONE ✅  Premium is live at ${BACKEND_URL} ($${priceUsd}/mo or $${annualPriceUsd}/yr, ${trialDays}-day trial)`);
+  console.log('Test it: open ScreenBuddy → Premium ✨ → create account → pick a plan.');
 })().catch((e) => { console.error(`\nFAILED: ${e.message}`); process.exit(1); });

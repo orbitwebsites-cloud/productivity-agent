@@ -21,6 +21,13 @@ const DEFAULTS = {
     supportUrl: 'https://support.orbitboyzz.me/'
   },
 
+  // Shown once, right after first-run setup finishes: a skippable prompt to create
+  // an account (email/password or Google). Free features work with or without one —
+  // this is about surfacing account creation early, not gating anything on it.
+  onboarding: {
+    accountPromptDone: false
+  },
+
   // The user's "Life Pursuits" — what THEY define as their work/goals.
   // A window counts toward a pursuit if its app or title matches any keyword.
   // (Keywords are matched case-insensitively as substrings.)
@@ -53,6 +60,33 @@ const DEFAULTS = {
     activePursuit: '',
     activeUntil: null,
     restoreWindowLimit: 3
+  },
+
+  // Opt-in remote control over WhatsApp (see electron/jarvis-whatsapp.js). Off by
+  // default — uses an unofficial WhatsApp Web client, which is a real account-ban risk
+  // the user has to knowingly accept in Settings before pairing.
+  jarvisWhatsapp: {
+    enabled: false,
+    projectDir: ''
+  },
+
+  // Opt-in local bridge (127.0.0.1:8643, see electron/autofill-bridge.js) that lets
+  // the ScreenBuddy Jarvis browser extension (extension/) fill web forms from this
+  // saved profile. Off by default. The extension only ever fills + highlights fields
+  // for review — it never submits a form on its own.
+  autofill: {
+    enabled: false,
+    profile: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      discord: '',
+      ign: '',
+      age: '',
+      school: '',
+      address: ''
+    }
   },
 
   // Premium - hosted AI. Sign in (Supabase) + subscription (Stripe) unlock

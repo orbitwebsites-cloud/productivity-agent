@@ -27,8 +27,20 @@
 - **Supabase:** project `screenbuddy` (`vipextcidorcauhlviig`, us-east-1, free tier).
   `subscriptions` table + RLS applied (migration `create_subscriptions`).
 - **Desktop app wired:** `electron/premium.js` (Supabase email auth from main process, token
-  refresh, checkout, /api/ask). Provider `backend` is the default; deterministic answers remain
-  the offline/signed-out fallback. Premium page = sign in/up, status badge, Upgrade button.
+  refresh, checkout, /api/ask). `provider` starts as `hermes` on every fresh install (free tier,
+  no account — see `electron/config.js` DEFAULTS); `electron/premium.js` flips it to `backend`
+  only once the user signs in **and** subscribes. Deterministic answers remain the offline/
+  signed-out/Hermes-unavailable fallback either way. Premium page = sign in/up, status badge,
+  Upgrade button.
+- **2026-07-09 — Hermes-core-engine decision closed:** reopened the "should Hermes be the core
+  engine" question and rejected a rewrite — the hosted backend is live and charging real Stripe
+  subscriptions, ripping it out for a CLI-dependent engine buys nothing the existing hybrid
+  doesn't already give. Instead found and fixed a real bug: `electron/setup.js` was starting the
+  Hermes gateway on port `9119` while `config.js`/the Hermes `.env` both point the app at `8642`,
+  so free-tier AI answers were silently falling back to the slower `hermes -z` CLI path every
+  time. Also bumped `hermes.js`'s HTTP timeout from 2.5s → 25s (was discarding valid slow local
+  responses). `README.md`/`SPEC.md` §13 reconciled to describe the real hybrid instead of
+  contradicting it.
 
 ### ✅ Premium fully wired + LIVE — done 2026-07-08
 User's own Supabase project **`screenbud`** (`bmqhokhibnjdiwvycfxw`, us-west-2) is now the one
@@ -57,9 +69,124 @@ frictionless sign-up (currently requires clicking an email link before first sig
 - Local app: `electron/{main,tracker,activewin,accountability,db,classify,answers,capture,
   appscan,appknowledge,premium,setup,config,preload}.js`, `electron/providers/*`, `renderer/*`
 - Backend: `backend/` (+ root `api/` shims, `vercel.json`, `.vercelignore`)
-- Old Hermes/Ollama provider path still exists as a power-user option (unused by default).
+- Hermes is the free-tier default (not a legacy/unused path — see 2026-07-09 note above); Ollama
+  and generic OpenAI-compatible providers remain manual power-user options in Settings.
+- WhatsApp Jarvis remote-agent: `electron/jarvis-whatsapp.js`, wired via IPC
+  (`buddy:jarvisWhatsapp*`) + Settings > Jarvis Mode > "WhatsApp Remote (beta)". Off by default.
+  Shares the exact same `buddyAsk()` brain as the in-app chat panel (main.js), plus scoped
+  `!git status` / `!git push` dev-ops commands (spawn with argv arrays, never shell strings).
+  Only ever acts on `message.fromMe` — i.e. messages sent from the phone that scanned the
+  pairing QR — and refuses (doesn't attempt) requests to auto-complete courses/quizzes or
+  blind-submit forms with personal data.
+  **Deliberately NOT wired into `build.files`/the installer yet:** `npm install` pulled in
+  `whatsapp-web.js` → `puppeteer`, which downloaded **~626MB of bundled Chromium** to
+  `~/.cache/puppeteer`. Bundling that into the NSIS installer would roughly triple its size, and
+  I have no Windows/Mac box here to verify the packaged (asar) build actually launches Puppeteer
+  correctly or that QR pairing works end-to-end with a real phone. Works today via `npm start`
+  (dev). Before shipping it in a real build: test pairing + a round-trip command on a real
+  machine, then add the needed `node_modules/{whatsapp-web.js,puppeteer,puppeteer-core,...}`
+  paths to `package.json`'s `build.files`.
+- Also fixed while working on the above: `electron/setup.js` hardcoded `hermes serve --port 9119`
+  while `config.js`/the Hermes `.env` point at `8642` — free-tier Hermes answers were silently
+  falling back to the slow CLI path every time. And `hermes.js`'s HTTP timeout was 2.5s, too
+  short for genuine local inference — bumped to 25s.
+- Local chat is now a real general assistant, not just activity Q&A: `answers.js` tries the AI
+  for every question (not only activity-shaped ones), and the local `CHAT_SYSTEM_PROMPT`
+  (`electron/providers/prompts.js`) explicitly covers "help with whatever else they ask." The
+  premium backend (`backend/api/ask.js`) is untouched — still scoped to activity coaching by
+  design, a general question there just degrades to an honest "no data for that."
+- **Copy-paste-loop nudge** (`electron/loopnudge.js`): watches tracker samples for someone
+  bouncing between an AI-chat tab (ChatGPT/Claude/Gemini/Copilot) and a code editor over and
+  over. After ~3 round trips it fires a notification offering to draft it directly; clicking
+  opens the panel and asks Pesto to take over via the same `buddyAsk()` pipeline above. Skipped
+  mode `chill`. This does *not* reach into the editor and type for the user — that would need
+  real editor integration (a VS Code extension or similar), out of scope here; it opens a chat
+  the AI can actually answer in.
+- **Browser autofill (`extension/` + `electron/autofill-bridge.js`)**: opt-in, off by default.
+  A loopback-only HTTP+WS bridge (127.0.0.1:8643) plus a WebExtension (MV3, `manifest.json` for
+  Chrome/Edge/Chromium — Kimi's browser included, most are Chromium-based — and
+  `manifest.firefox.json` for Firefox, only the background-script manifest key differs) that
+  fills form fields on the active tab from a profile saved in Settings > Jarvis Mode > Browser
+  Autofill. **Never auto-submits** — highlights filled fields + shows a review banner, the human
+  clicks Submit. Triggered via the extension popup (always works) or WhatsApp `!autofill`
+  (best-effort — MV3 background pages suspend when idle in both browsers). Verified end-to-end
+  in this session with Playwright against the pre-installed headless Chromium: loaded the
+  unpacked extension, pushed a fill over the WS bridge, confirmed 6/6 fields filled correctly
+  and the test form's submit handler never fired. Not verified in a real desktop browser or in
+  Firefox specifically — do that before relying on it.
+- **General browser-task agent** (`electron/browser-agent.js`, `!browser <instruction>` on
+  WhatsApp): a bounded (max 6 steps) snapshot → AI-decides-next-action → act loop, built on the
+  same bridge/extension as autofill. `extension/content.js`'s `agentSnapshot` lists visible
+  interactive elements on the active tab; `agentAct` executes exactly one click/type/navigate,
+  blocking (not just discouraging) anything that reads as submit/buy/pay/subscribe/delete/
+  confirm-order — same non-negotiable boundary as autofill, enforced in the content script
+  itself so it holds regardless of what the model decides. Local engine only
+  (`providers.rawChat` in `electron/providers/index.js` throws a clear error on the `backend`
+  provider — the premium backend's `/api/ask` has its own fixed narrower prompt by design, not
+  meant to run arbitrary structured prompts). Verified end-to-end this session with Playwright:
+  real snapshot → decide → act loop completed a genuine 2-step task (open FAQ tab, report the
+  refund policy text) using the real prompt-building/JSON-parsing code (model calls stubbed,
+  since no live Hermes/LLM in this sandbox); separately confirmed the denylist blocks a
+  "Buy Now" and a "Submit Application" button both directly and through the full task loop
+  ("buy this for me" → refused, nothing clicked). Caught and fixed a real bug in this process:
+  the AI-facing decision schema uses `"action"` as the verb field name, the extension's
+  executor used `"type"` — every action was silently failing closed until `browser-agent.js`
+  translated between the two. **Not yet run against a real Hermes/local model's actual output**
+  (only the prompt/parse/act plumbing was verified, not real model judgment) — try it for real
+  before trusting it unsupervised.
+- **Pricing changed** (user decision, 2026-07-09): $14.99/mo or $9.99/mo billed annually
+  ($119.88/yr), both starting with a **7-day free trial** — hard paywall (no AI) once it ends,
+  2 options only, no third tier. `backend/api/checkout.js` takes `{ plan: 'monthly'|'annual' }`
+  and adds `subscription_data[trial_period_days]`; Stripe's native "trialing" status already
+  counted as premium in `isPremium()` (`backend/lib/util.js`), so no other backend change was
+  needed for the trial itself. `scripts/finish-setup.js` now provisions **both** prices under
+  the same "ScreenBuddy Premium" product and pushes `STRIPE_PRICE_ID_ANNUAL` + `TRIAL_DAYS` to
+  Vercel — **it does not touch the existing live $4.99/mo price** (Stripe prices are immutable
+  once created; old one is left alone, unreferenced once `STRIPE_PRICE_ID` is repointed).
+  **I did not run this against live Stripe** — no secret key in this environment, and it
+  shouldn't be pasted into chat either. To go live: `node scripts/finish-setup.js` locally with
+  your real `.env`, same as the original setup.
+- **WhatsApp/Puppeteer now packaged into the installer** (user decision, 2026-07-09 — "people
+  shouldn't have to touch a terminal to pair WhatsApp"). Two changes:
+  1. `.puppeteerrc.cjs` points Puppeteer's Chromium download at `node_modules/.cache/puppeteer`
+     (inside the project) instead of the default `~/.cache/puppeteer` (outside it, invisible to
+     electron-builder). Ran `npx puppeteer browsers install chrome chrome-headless-shell` to
+     redownload there — 626MB, verified present locally.
+  2. `package.json`'s `build.files` dropped the old fully-hand-curated `node_modules/*` list
+     (it predates whatsapp-web.js/puppeteer and would silently miss dozens of their transitive
+     deps — 186 production packages now, was ~13) in favor of electron-builder's **default**
+     dependency-tree-based `node_modules` inclusion, which is what most electron-builder
+     projects rely on and handles nested/hoisted deps correctly, plus one explicit extra entry
+     for the puppeteer cache dir (not a resolvable npm package, so the default walker won't
+     find it on its own). Added `asarUnpack` for `puppeteer`/`puppeteer-core`/the cache dir,
+     since a real Chrome binary can't be exec'd from inside an asar archive.
+  - **I could not verify a real build with this config.** `npx electron-builder --dir` in this
+    sandbox fails before producing any output — `Response code 403 (Forbidden)` fetching an
+    electron-builder tooling asset, unrelated to this `files`/`asarUnpack` change, caused by
+    this environment's outbound proxy blocking that download. This is a sandbox limitation, not
+    a known code problem, but it means **this packaging config is unverified** — build it for
+    real (`npm run build:win`) and confirm WhatsApp QR pairing actually works from the packaged
+    `.exe`, not just `npm start`, before shipping it to anyone.
+- **Google sign-in** (`electron/oauth.js`): Supabase OAuth + PKCE, no supabase-js SDK — matches
+  the existing plain-REST auth pattern in `premium.js`. Flow: open the system browser to
+  Supabase's `/authorize?provider=google` with a PKCE challenge → a short-lived local HTTP
+  server on `127.0.0.1:53682` catches Supabase's own redirect-back with an auth code → exchange
+  that code for a session via `/token?grant_type=pkce`. Wired into `premium.signInWithGoogle()`
+  (same session-storage/`provider:'backend'` path as email sign-in), a "Continue with Google"
+  button on the Premium page, and the new onboarding prompt below.
+  **Needs one thing I can't do myself: Google must be enabled as an Auth provider in the
+  Supabase dashboard** (Authentication → Providers → Google, with a real Google Cloud OAuth
+  client + redirect URI). Until that's done, the button will fail with whatever error Supabase
+  returns for a disabled provider — that's expected, not a bug, do the dashboard step first.
+- **Skippable account prompt on first run** (`onboarding.accountPromptDone` in config.js): right
+  after "Start Pesto" setup finishes, before the main app shows, a one-time screen offers
+  email/password or Google sign-up with a "Maybe later" skip. Free tracking/answers still work
+  with no account either way — this is surfacing account creation at download time like asked,
+  not gating anything on it. If a true hard requirement (can't use the app at all without an
+  account) is actually what's wanted instead, that's a bigger, different change — say so and
+  I'll do that version instead.
 
 ## Run / build
 - Dev: `npm start` · Build exe: `npm run build:win` -> `dist\ScreenBuddy 0.1.0.exe`
 - Backend redeploy: `npx vercel deploy --prod --yes` from repo root (CLI is authed).
-- Test premium flow: app → Premium ✨ → create account → sign in → Upgrade (needs Stripe env).
+- Test premium flow: app → Premium ✨ → create account → sign in → pick a plan (needs Stripe env).

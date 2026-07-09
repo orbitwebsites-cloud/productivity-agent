@@ -111,15 +111,16 @@ async function answer(question, config) {
   const { start, end, label } = rangeFor(question);
   const a = aggregate(getActivityBetween(start, end));
 
-  if (!looksLikeActivityQuestion(question)) {
-    return deterministicAnswer(question, a, label);
-  }
-
+  // Try the AI for everything, not just activity-shaped questions — the local
+  // (Hermes) system prompt is a general assistant as well as an activity Q&A one,
+  // so "take over and help me draft this" actually works, not just stats lookups.
+  // The premium backend stays scoped to activity coaching per its own prompt; a
+  // general question there just degrades to an honest "no data for that."
   try {
     const ai = await providers.answerQuestion(config, question, summaryText(label, a));
     if (ai && ai.trim()) return ai.trim();
   } catch {
-    // Local-first fallback when Ollama/cloud config is not available.
+    // No provider configured/reachable — fall back to the deterministic answer.
   }
 
   return deterministicAnswer(question, a, label);

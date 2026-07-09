@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('buddy', {
   testAgent: (settings) => ipcRenderer.invoke('buddy:testAgent', settings),
   installSetup: () => ipcRenderer.invoke('buddy:installSetup'),
   declineSetup: () => ipcRenderer.invoke('buddy:declineSetup'),
+  completeOnboarding: () => ipcRenderer.invoke('buddy:completeOnboarding'),
   openSetupHelp: (errorText) => ipcRenderer.invoke('buddy:openSetupHelp', errorText),
   recentApps: () => ipcRenderer.invoke('buddy:recentApps'),
   scanApps: () => ipcRenderer.invoke('buddy:scanApps'),
@@ -30,13 +31,29 @@ contextBridge.exposeInMainWorld('buddy', {
   saveAccountability: (settings) => ipcRenderer.invoke('buddy:saveAccountability', settings),
   saveJarvis: (settings) => ipcRenderer.invoke('buddy:saveJarvis', settings),
   runAction: (actionId) => ipcRenderer.invoke('buddy:runAction', actionId),
+  jarvisWhatsappStatus: () => ipcRenderer.invoke('buddy:jarvisWhatsappStatus'),
+  jarvisWhatsappSet: (settings) => ipcRenderer.invoke('buddy:jarvisWhatsappSet', settings),
+  onJarvisWhatsappEvent: (cb) => {
+    const handler = (_e, evt) => cb(evt);
+    ipcRenderer.on('jarvis:whatsappEvent', handler);
+    return () => ipcRenderer.removeListener('jarvis:whatsappEvent', handler);
+  },
+  onPrefillPrompt: (cb) => {
+    const handler = (_e, text) => cb(text);
+    ipcRenderer.on('buddy:prefillPrompt', handler);
+    return () => ipcRenderer.removeListener('buddy:prefillPrompt', handler);
+  },
+  autofillStatus: () => ipcRenderer.invoke('buddy:autofillStatus'),
+  autofillSet: (settings) => ipcRenderer.invoke('buddy:autofillSet', settings),
+  autofillTrigger: () => ipcRenderer.invoke('buddy:autofillTrigger'),
   wardenHide: () => ipcRenderer.invoke('warden:hide'),
   wardenCancel: () => ipcRenderer.invoke('warden:cancel'),
   premiumStatus: () => ipcRenderer.invoke('premium:status'),
   premiumSignIn: (email, password) => ipcRenderer.invoke('premium:signIn', { email, password }),
   premiumSignUp: (email, password) => ipcRenderer.invoke('premium:signUp', { email, password }),
+  premiumSignInGoogle: () => ipcRenderer.invoke('premium:signInGoogle'),
   premiumSignOut: () => ipcRenderer.invoke('premium:signOut'),
-  premiumUpgrade: () => ipcRenderer.invoke('premium:upgrade'),
+  premiumUpgrade: (plan) => ipcRenderer.invoke('premium:upgrade', plan),
   hidePanel: () => ipcRenderer.invoke('panel:hide'),
   quit: () => ipcRenderer.invoke('buddy:quit')
 });
