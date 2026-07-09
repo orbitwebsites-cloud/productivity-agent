@@ -1,6 +1,6 @@
 {
   "name": "screenbuddy",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Pesto - a desktop focus companion that tracks pursuits, restores context, and guards against drift.",
   "main": "electron/main.js",
   "author": "Orbit Boyzz",
@@ -13,6 +13,7 @@
     "build:mac": "electron-builder --mac"
   },
   "devDependencies": {
+    "@vercel/blob": "^2.6.1",
     "electron": "^43.1.0",
     "electron-builder": "^26.15.3"
   },
@@ -35,7 +36,20 @@
     "mac": {
       "category": "public.app-category.productivity",
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "identity": null,
       "artifactName": "ScreenBuddy-${version}-${arch}.${ext}"

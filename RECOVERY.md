@@ -212,7 +212,43 @@ frictionless sign-up (currently requires clicking an email link before first sig
     than 20s on a slower machine, which would misreport "failed" on a machine that just needed
     more time.
 
+- **Auto-update publish pipeline wired up** (2026-07-09). The client side (`electron/updater.js`)
+  was already real — checks every 4h, silently downloads, installs on quit — but nothing was
+  actually publishing new versions to the feed it checks (`.github/workflows/build-beta.yml`
+  builds with `--publish=never`, and electron-builder's `generic` provider can't upload anyway,
+  it's download-only). Two real gaps closed:
+  1. **Mac had no `.dmg`-only auto-update path** — Squirrel.Mac (what electron-updater uses on
+     Mac) needs a `.zip` of the `.app`, not a `.dmg`. Added `zip` as a second mac build target
+     alongside `dmg` (dmg stays for the manual download link on the site).
+  2. **`scripts/publish-release.js`**: uploads whatever `dist/*.exe`/`*.dmg`/`*.zip` +
+     `latest*.yml` electron-builder produced to the Vercel Blob `releases/` bucket at fixed
+     paths (`addRandomSuffix:false`, `allowOverwrite:true`) — exactly what electron-updater's
+     generic provider expects. Wired into CI: a plain "Run workflow" (what's been used for beta
+     testing so far) still only builds artifacts, no publish, safe to run anytime. Pushing a
+     version tag (`v*`) additionally runs the publish step — that's the deliberate "ship this to
+     everyone who has the app installed" trigger. Needs a `BLOB_READ_WRITE_TOKEN` repo secret
+     (Vercel dashboard → Storage → blob store → read-write token → GitHub repo Settings →
+     Secrets and variables → Actions). **The token the user pasted into chat to get this built
+     should be rotated in Vercel once this is confirmed working** — anything pasted into a chat
+     transcript should be treated as exposed, even though I didn't write it into any file.
+  - Bumped `package.json` version to `0.1.2` — electron-updater compares this field (via the
+    generated `latest.yml`), not the git tag name, to decide whether an "update" is actually
+    newer. Publishing a tag without bumping this would silently no-op for existing installs.
+  - **Known follow-up, not fixed here:** `screenbuddy-site/site.js`'s manual download links
+    still hardcode `0.1.1` (matches the artifacts already sitting in the last beta build, ready
+    to be manually uploaded) — deliberately left alone so it doesn't break that in-flight
+    upload. Whenever a real `v0.1.2`+ tag actually gets pushed, that file's version strings need
+    updating too (or this whole thing should be templated properly) — I didn't do that
+    speculatively since no tag has been pushed yet.
+  - **Unverified**: never actually ran this publish step for real (no token available in this
+    sandbox, and shouldn't push a real release without the human's go-ahead anyway) — the mac
+    `zip` + Squirrel.Mac update flow specifically has no real-world confirmation the way the
+    Windows Hermes fix does. Test an actual update cycle (old version installed → new version
+    tagged/published → app picks it up within 4h or on relaunch) before trusting it fully.
+
 ## Run / build
 - Dev: `npm start` · Build exe: `npm run build:win` -> `dist\ScreenBuddy 0.1.0.exe`
 - Backend redeploy: `npx vercel deploy --prod --yes` from repo root (CLI is authed).
 - Test premium flow: app → Premium ✨ → create account → sign in → pick a plan (needs Stripe env).
+- Ship a real auto-update: bump `package.json`'s `version`, `git tag vX.Y.Z && git push origin vX.Y.Z`
+  (needs `BLOB_READ_WRITE_TOKEN` repo secret set first).
