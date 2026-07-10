@@ -76,6 +76,13 @@ const DEFAULTS = {
   // for review — it never submits a form on its own.
   autofill: {
     enabled: false,
+    // Separate, stronger consent than form-fill: when true, Jarvis may click,
+    // type, and navigate in the active tab to complete a task ("!browser ..." or
+    // the in-app task box), not just fill fields for review. The hard safety
+    // boundary still holds — the agent never clicks Submit/Buy/Pay/Subscribe/
+    // Delete (enforced in browser-agent.js AND extension/content.js). Off by
+    // default; the user turns it on knowingly in Settings > Jarvis Mode.
+    control: false,
     profile: {
       firstName: '',
       lastName: '',

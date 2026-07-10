@@ -183,3 +183,18 @@ button:disabled{opacity:.55; cursor:default;}
   .setup-actions .save, .setup-actions .ghostsave{width:auto;}
   .jarvis-grid{grid-template-columns:1fr 1fr;}
 }
+
+/* ===== Browser Control (Jarvis) ===== */
+.control-status{display:flex; align-items:center; gap:8px; margin-top:12px;}
+.status-dot{width:9px; height:9px; border-radius:50%; flex:0 0 auto; box-shadow:0 0 0 3px rgba(0,0,0,0.04);}
+.status-dot.off{background:var(--faint);}
+.status-dot.wait{background:var(--amber); box-shadow:0 0 0 3px var(--amber-soft); animation:gentlePulse 1.6s var(--ease-in-out) infinite;}
+.status-dot.on{background:var(--sage); box-shadow:0 0 0 3px var(--sage-soft);}
+.connect-steps{margin-top:14px; padding-top:14px; border-top:1px solid var(--line);}
+.connect-steps .steps{margin:6px 0 12px 18px; padding:0; display:flex; flex-direction:column; gap:6px; font-size:12.5px; color:var(--ink-soft); line-height:1.5;}
+.connect-steps code{background:rgba(60,50,40,0.07); padding:1px 5px; border-radius:5px; font-size:12px;}
+.task-run{margin-top:14px; padding-top:14px; border-top:1px solid var(--line);}
+.task-row{display:flex; gap:8px; align-items:stretch; margin-top:6px;}
+.task-row .field{flex:1;}
+.task-row .save{white-space:nowrap; min-height:auto; padding:0 18px;}
+.task-result{margin-top:10px; padding:11px 13px; border-radius:12px; background:var(--surface-warm); border:1px solid var(--line); font-size:12.5px; color:var(--ink-soft); line-height:1.5; white-space:pre-wrap;}

@@ -194,7 +194,7 @@ document.querySelectorAll('.navitem').forEach((b) => {
     const target = document.getElementById('page-' + page);
     if (target) { target.hidden = false; requestAnimationFrame(() => target.classList.add('active')); }
     if (page === 'privacy') loadPrivacy();
-    if (page === 'jarvis') { loadJarvis(); loadJarvisWa(); loadAutofill(); }
+    if (page === 'jarvis') { loadJarvis(); loadJarvisWa(); loadBrowserControl(); loadAutofill(); }
     if (page === 'premium') loadPremium();
   });
 });
@@ -414,6 +414,94 @@ window.buddy.onJarvisWhatsappEvent((evt) => {
   }
   window.buddy.jarvisWhatsappStatus().then(renderJarvisWaStatus);
 });
+
+// ---------- Jarvis Mode: Browser Control (beta) ----------
+let bcStatusTimer = null;
+
+function renderBrowserControl(status) {
+  const on = !!status.control;
+  document.getElementById('browserControlEnabled').checked = on;
+  document.getElementById('bcConnect').hidden = !on;
+  document.getElementById('bcTaskWrap').hidden = !on;
+
+  const dot = document.getElementById('bcDot');
+  const label = document.getElementById('bcStatus');
+  if (!on) {
+    dot.className = 'status-dot off';
+    label.textContent = 'Off';
+  } else if (status.connected) {
+    dot.className = 'status-dot on';
+    label.textContent = 'Connected — a browser window is linked and ready.';
+  } else {
+    dot.className = 'status-dot wait';
+    label.textContent = 'On, waiting for your browser extension to connect…';
+  }
+}
+
+async function loadBrowserControl() {
+  try {
+    renderBrowserControl(await window.buddy.browserControlStatus());
+  } catch { /* panel may not be ready */ }
+}
+
+// While control is on but not yet connected, poll so the dot flips to green
+// the moment the user loads the extension — no manual refresh needed.
+function scheduleBrowserControlPoll() {
+  if (bcStatusTimer) clearInterval(bcStatusTimer);
+  bcStatusTimer = setInterval(async () => {
+    const onJarvis = !document.getElementById('page-jarvis').hidden;
+    const enabled = document.getElementById('browserControlEnabled').checked;
+    if (!onJarvis || !enabled) return;
+    try { renderBrowserControl(await window.buddy.browserControlStatus()); } catch { /* ignore */ }
+  }, 3000);
+}
+
+document.getElementById('browserControlEnabled').addEventListener('change', async (e) => {
+  try {
+    const { status } = await window.buddy.browserControlSet({ control: e.target.checked });
+    renderBrowserControl(status);
+    flash('browserControlMsg', e.target.checked
+      ? 'Browser control on. Connect your browser below.'
+      : 'Browser control off.');
+  } catch (err) {
+    flash('browserControlMsg', `Error: ${err.message}`);
+  }
+});
+
+document.getElementById('openExtFolder').addEventListener('click', async () => {
+  try {
+    const res = await window.buddy.openExtensionFolder();
+    document.getElementById('extFolderMsg').textContent = res.ok
+      ? 'Opened. Load it as an unpacked extension.'
+      : `Couldn't open the folder: ${res.error || 'unknown'} (${res.dir})`;
+  } catch (err) {
+    document.getElementById('extFolderMsg').textContent = `Error: ${err.message}`;
+  }
+});
+
+async function runBrowserTask() {
+  const input = document.getElementById('bcTaskInput');
+  const btn = document.getElementById('bcRunTask');
+  const out = document.getElementById('bcTaskResult');
+  const instruction = input.value.trim();
+  if (!instruction) return;
+  btn.disabled = true;
+  out.hidden = false;
+  out.textContent = 'Working on it…';
+  try {
+    const res = await window.buddy.browserTask(instruction);
+    out.textContent = res?.text || 'Done.';
+  } catch (err) {
+    out.textContent = `Error: ${err.message}`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+document.getElementById('bcRunTask').addEventListener('click', runBrowserTask);
+document.getElementById('bcTaskInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') runBrowserTask();
+});
+scheduleBrowserControlPoll();
 
 // ---------- Jarvis Mode: Browser Autofill (beta) ----------
 const AUTOFILL_FIELDS = ['firstName', 'lastName', 'email', 'phone', 'discord', 'ign', 'age', 'school', 'address'];

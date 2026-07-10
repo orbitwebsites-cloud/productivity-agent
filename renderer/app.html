@@ -208,7 +208,54 @@
           <span id="jarvisWaMsg" class="savemsg"></span>
         </div>
 
-        <h1 style="margin-top: 32px;">Browser Autofill + Agent (beta)</h1>
+        <h1 style="margin-top: 32px;">Browser Control (beta)</h1>
+        <p class="lead">Let Pesto <b>drive your browser</b> for you — "open the FAQ and tell me the
+          refund policy", "find the cheapest flight to NYC next Friday". It reads the active tab,
+          then clicks, types, and navigates a few steps to get it done, reporting back when it's
+          finished.</p>
+        <p class="hint">Hard limit, always on: Pesto <b>never</b> clicks Submit, Buy, Pay, Subscribe,
+          or Delete. It stops and hands those back to you. Everything runs on your machine — nothing
+          about your browsing leaves this computer.</p>
+
+        <div class="agentbox">
+          <label class="fieldlabel">
+            <input id="browserControlEnabled" type="checkbox" /> Let Jarvis control my browser
+          </label>
+
+          <div class="control-status">
+            <span id="bcDot" class="status-dot off" aria-hidden="true"></span>
+            <span id="bcStatus" class="hint" style="margin:0;">Off</span>
+          </div>
+
+          <div id="bcConnect" class="connect-steps" hidden>
+            <p class="fieldlabel" style="margin-bottom:6px;">Connect your browser (one time)</p>
+            <ol class="steps">
+              <li>Click <b>Open extension folder</b> below.</li>
+              <li>In Chrome/Edge: open <code>chrome://extensions</code>, turn on <b>Developer
+                mode</b>, click <b>Load unpacked</b>, and pick that folder. (Firefox: <code>about:debugging</code>
+                → This Firefox → Load Temporary Add-on.)</li>
+              <li>Keep a browser window open — the dot above turns green when it connects.</li>
+            </ol>
+            <button id="openExtFolder" class="ghostsave" type="button">Open extension folder</button>
+            <span id="extFolderMsg" class="hint" style="margin-left:8px;"></span>
+          </div>
+
+          <div id="bcTaskWrap" class="task-run" hidden>
+            <label class="fieldlabel" for="bcTaskInput">Give Pesto a browser task</label>
+            <div class="task-row">
+              <input id="bcTaskInput" class="field" type="text"
+                placeholder="open the FAQ page and tell me the refund policy" />
+              <button id="bcRunTask" class="save" type="button">Run</button>
+            </div>
+            <p id="bcTaskResult" class="task-result" hidden></p>
+          </div>
+        </div>
+
+        <div class="saverow">
+          <span id="browserControlMsg" class="savemsg"></span>
+        </div>
+
+        <h1 style="margin-top: 32px;">Browser Autofill (beta)</h1>
         <p class="lead">Fills web forms — applications, sign-ups — from the profile below, for
           you to review before submitting (<code>!autofill</code> on WhatsApp, or the extension
           icon). Or hand it a task: <code>!browser open the FAQ page and tell me the refund

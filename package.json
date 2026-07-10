@@ -28,6 +28,12 @@
       "assets/**/*",
       "node_modules/.cache/puppeteer/**/*"
     ],
+    "extraResources": [
+      {
+        "from": "extension",
+        "to": "extension"
+      }
+    ],
     "asarUnpack": [
       "node_modules/.cache/puppeteer/**/*",
       "node_modules/puppeteer/**/*",

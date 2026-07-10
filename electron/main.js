@@ -399,14 +399,30 @@ async function buddyAsk(question) {
 // General browser-task agent (electron/browser-agent.js), reachable from WhatsApp's
 // !browser command. Requires the autofill bridge + browser extension to be connected.
 async function runBrowserTask(instruction) {
+  const cfg = loadConfig();
+  if (!cfg.autofill?.control) {
+    return 'Browser control is off. Turn on "Let Jarvis control my browser" in Settings > Jarvis Mode first — it lets Pesto click and navigate for you (it never pays, submits, or deletes).';
+  }
   if (!autofillBridge.isRunning()) {
-    return 'Browser autofill bridge is off. Enable it in Settings > Jarvis Mode > Browser Autofill first.';
+    return 'Browser bridge is off. Enable browser control in Settings > Jarvis Mode first.';
+  }
+  if (!autofillBridge.anyConnected()) {
+    return "The ScreenBuddy browser extension isn't connected. Open Settings > Jarvis Mode > Browser Control and use \"Connect your browser\" to load it, then open a browser window.";
   }
   return browserAgent.runTask(instruction, {
-    config: loadConfig(),
+    config: cfg,
     snapshot: () => autofillBridge.request('snapshot'),
     act: (action) => autofillBridge.request('act', { action })
   });
+}
+
+// Absolute path to the unpacked extension, so the UI can point the user at it
+// for load-unpacked (Chrome) / load-temporary (Firefox). Packaged builds keep
+// the extension alongside the app resources.
+function extensionDir() {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'extension')
+    : path.join(__dirname, '..', 'extension');
 }
 
 // ---- panel IPC ----
@@ -724,7 +740,8 @@ ipcMain.handle('buddy:autofillSet', (event, settings) => {
     }
   });
 
-  if (enabled) {
+  // Control implies the bridge, so keep it up if either is on.
+  if (enabled || cfg.autofill?.control) {
     autofillBridge.start({ profileProvider: () => loadConfig().autofill?.profile || {} });
   } else {
     autofillBridge.stop();
@@ -735,6 +752,53 @@ ipcMain.handle('buddy:autofillSet', (event, settings) => {
 ipcMain.handle('buddy:autofillTrigger', (event) => {
   requireAppWindow(event);
   return { text: autofillBridge.triggerFill() };
+});
+
+// ---- Browser control: opt-in agentic clicking (built on the same bridge +
+// extension as autofill, but a stronger consent — see autofill.control). ----
+ipcMain.handle('buddy:browserControlStatus', (event) => {
+  requireAppWindow(event);
+  const cfg = loadConfig();
+  return {
+    control: !!cfg.autofill?.control,
+    bridgeRunning: autofillBridge.isRunning(),
+    connected: autofillBridge.anyConnected()
+  };
+});
+
+ipcMain.handle('buddy:browserControlSet', (event, settings) => {
+  requireAppWindow(event);
+  const cur = loadConfig();
+  const control = !!(settings && settings.control);
+  // Control implies the bridge + extension link, so enabling it also enables
+  // the underlying autofill bridge; the user only has to flip one switch.
+  const cfg = saveConfig({
+    autofill: { ...(cur.autofill || {}), control, enabled: control ? true : (cur.autofill?.enabled || false) }
+  });
+  if (control || cfg.autofill?.enabled) {
+    autofillBridge.start({ profileProvider: () => loadConfig().autofill?.profile || {} });
+  } else {
+    autofillBridge.stop();
+  }
+  return { config: cfg, status: { control: !!cfg.autofill?.control, bridgeRunning: autofillBridge.isRunning(), connected: autofillBridge.anyConnected() } };
+});
+
+ipcMain.handle('buddy:browserTask', async (event, instruction) => {
+  requireAppWindow(event);
+  const text = String(instruction || '').trim();
+  if (!text) return { text: 'Type what you want Pesto to do in the browser first.' };
+  try {
+    return { text: await runBrowserTask(text) };
+  } catch (err) {
+    return { text: `Stopped: ${err.message}` };
+  }
+});
+
+ipcMain.handle('buddy:openExtensionFolder', async (event) => {
+  requireAppWindow(event);
+  const dir = extensionDir();
+  const err = await shell.openPath(dir);
+  return { dir, ok: !err, error: err || null };
 });
 
 async function restoreWorkspace(label) {
