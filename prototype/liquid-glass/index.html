@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ScreenBuddy — Liquid Glass Prototype</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <linearGradient id="gradLogo" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#e0895f"/><stop offset="1" stop-color="#c96442"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19"/></svg>
+        <div><div class="lname">ScreenBuddy</div><div class="ltag">Your productivity companion</div></div>
+      </div>
+      <div class="rule"></div>
+      <nav class="nav">
+        <button class="navitem active" data-page="pursuits"><span class="dot"></span>Life Pursuits</button>
+        <button class="navitem" data-page="disabled"><span class="dot"></span>Privacy Tiers</button>
+        <button class="navitem" data-page="jarvis"><span class="dot"></span>Jarvis Mode</button>
+        <button class="navitem" data-page="disabled"><span class="dot"></span>Premium ✨</button>
+      </nav>
+      <div class="sidefoot">Liquid Glass prototype · Direction A</div>
+    </aside>
+
+    <main class="main">
+
+      <section id="page-pursuits" class="page active">
+        <div class="kicker">What counts as work</div>
+        <h1 class="h1">Life Pursuits</h1>
+        <p class="lead">Tell Pesto what counts as <b>your</b> work. Time is credited to a pursuit
+          when the app or window title contains any of its keywords.</p>
+
+        <div class="scanrow">
+          <button id="scanApps" class="btn btn-primary">🔍 Scan my PC for apps</button>
+          <span id="scanMsg" class="savemsg"></span>
+        </div>
+
+        <div id="pursuitList" class="plist"></div>
+
+        <button id="addPursuit" class="addrow">+ Add a pursuit</button>
+
+        <div class="recent">
+          <div class="recent-h">Apps you've used recently — click a chip to add it to the selected pursuit</div>
+          <div id="recentApps" class="recent-apps"><span class="empty">Scan to see recent apps.</span></div>
+        </div>
+
+        <div class="saverow">
+          <button id="savePursuits" class="btn btn-primary">Save pursuits</button>
+          <span id="saveMsg" class="savemsg"></span>
+        </div>
+      </section>
+
+      <section id="page-jarvis" class="page" hidden>
+        <div class="kicker">Active focus guard</div>
+        <h1 class="h1">Jarvis Mode</h1>
+        <p class="lead">Pesto can actively guard your current pursuit. If you drift for too long,
+          he shows a countdown, then safely minimizes the distraction and tries to bring your work back.</p>
+
+        <div class="jcols">
+          <div class="jcol-left">
+            <div class="agentbox">
+              <label class="fieldlabel" for="jarvisMode">Accountability mode</label>
+              <select id="jarvisMode" class="field">
+                <option value="chill">Chill — just track</option>
+                <option value="nudge">Nudge — gentle reminders</option>
+                <option value="drill">Drill — stronger reminders</option>
+                <option value="warden">Warden — hide hard distractions</option>
+                <option value="jarvis" selected>Jarvis — guard active pursuit</option>
+              </select>
+
+              <label class="fieldlabel" for="activePursuit">Active pursuit</label>
+              <select id="activePursuit" class="field"></select>
+
+              <div class="jgrid">
+                <div>
+                  <label class="fieldlabel" for="focusDriftLimit">Drift limit (minutes)</label>
+                  <input id="focusDriftLimit" class="field" type="number" min="1" max="120" value="25" />
+                </div>
+                <div>
+                  <label class="fieldlabel" for="wardenSeconds">Countdown (seconds)</label>
+                  <input id="wardenSeconds" class="field" type="number" min="3" max="60" value="10" />
+                </div>
+              </div>
+
+              <p class="hint">Jarvis never closes apps. He only minimizes the current window, so the action is reversible.</p>
+            </div>
+
+            <div class="stat-row">
+              <div class="stat"><b id="statGuarded">0h 0m</b><span>Guarded this session</span></div>
+              <div class="stat"><b id="statDrifts">0</b><span>Drifts caught</span></div>
+            </div>
+
+            <div class="saverow">
+              <button id="saveJarvis" class="btn btn-primary">Save Jarvis mode</button>
+              <span id="jarvisMsg" class="savemsg"></span>
+            </div>
+          </div>
+
+          <div class="jcol-right">
+            <div id="guardCard" class="guardcard state-idle">
+              <div class="guard-tag">Pesto Warden</div>
+              <div class="guard-goal" id="guardGoal">Guarding · Tech Job</div>
+              <div class="guard-head" id="guardHead">Watching for drift…</div>
+              <p class="guard-detail" id="guardDetail">Simulate a distraction to see how the countdown works.</p>
+
+              <div class="countrow" id="countrow" hidden>
+                <div class="count" id="guardCount">10</div>
+                <div class="bar"><div class="fill" id="guardFill"></div></div>
+              </div>
+
+              <div class="guard-actions">
+                <button id="simulateDrift" class="btn btn-ghost">Simulate drift</button>
+                <button id="guardStay" class="btn btn-ghost" hidden>Give me 5 min</button>
+                <button id="guardHide" class="btn btn-primary" hidden>Hide it now</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
