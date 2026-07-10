@@ -1,34 +1,77 @@
 import { useEffect, useRef } from 'react';
 
-// Soft color field: each cloud drifts on its own slow sine orbit. Drawn at
-// low resolution and blurred/upscaled by CSS, so it reads as an out-of-focus
-// render rather than stacked CSS gradients.
-const CLOUDS = [
-  { x: 0.1, y: 0.05, r: 0.62, rgb: '224, 137, 95', a: 0.8, ax: 0.06, ay: 0.05, s: 0.11, p: 0.0 },
-  { x: 0.9, y: 0.1, r: 0.55, rgb: '216, 168, 78', a: 0.55, ax: 0.05, ay: 0.06, s: 0.08, p: 2.1 },
-  { x: 0.82, y: 0.92, r: 0.68, rgb: '127, 156, 140', a: 0.62, ax: 0.06, ay: 0.05, s: 0.07, p: 4.2 },
-  { x: 0.22, y: 0.98, r: 0.58, rgb: '201, 100, 66', a: 0.42, ax: 0.07, ay: 0.04, s: 0.09, p: 1.3 },
-  { x: 0.48, y: 0.35, r: 0.52, rgb: '255, 248, 240', a: 0.9, ax: 0.04, ay: 0.04, s: 0.06, p: 3.4 },
-  { x: 0.62, y: 0.7, r: 0.4, rgb: '234, 178, 130', a: 0.38, ax: 0.05, ay: 0.06, s: 0.1, p: 5.1 },
+// Procedural stand-in for a blurred landscape photo: hazy sky, a warm sun
+// glow, and layered hill ridges that get darker and more saturated as they
+// come forward. Drawn at low resolution; the CSS blur upscale gives it the
+// out-of-focus photographic feel.
+const HILLS = [
+  // [baseline y, amplitude, frequency, phase, color]
+  [0.38, 0.045, 2.1, 0.4, '#b7c886'],
+  [0.48, 0.06, 1.7, 2.2, '#93ac5e'],
+  [0.58, 0.07, 1.4, 4.1, '#6f8f41'],
+  [0.7, 0.085, 1.2, 1.1, '#4f7030'],
+  [0.84, 0.1, 1.0, 3.3, '#375223'],
+  [0.96, 0.11, 0.9, 5.2, '#263c18'],
 ];
 
-function drawField(ctx, width, height, t) {
-  const base = ctx.createLinearGradient(0, 0, 0, height);
-  base.addColorStop(0, '#f9f0e6');
-  base.addColorStop(1, '#eddcc6');
-  ctx.fillStyle = base;
+function ridgeY(x, base, amp, freq, phase, height) {
+  return (
+    height *
+    (base +
+      amp * Math.sin(x * freq * Math.PI * 2 + phase) +
+      amp * 0.45 * Math.sin(x * freq * Math.PI * 4.7 + phase * 1.7))
+  );
+}
+
+function drawLandscape(ctx, width, height, t) {
+  // Hazy sky, brightest just above the first ridge
+  const sky = ctx.createLinearGradient(0, 0, 0, height * 0.55);
+  sky.addColorStop(0, '#d8e0b4');
+  sky.addColorStop(1, '#c2d194');
+  ctx.fillStyle = sky;
   ctx.fillRect(0, 0, width, height);
 
-  const span = Math.max(width, height);
-  for (const c of CLOUDS) {
-    const cx = (c.x + c.ax * Math.sin(t * c.s + c.p)) * width;
-    const cy = (c.y + c.ay * Math.cos(t * c.s * 0.9 + c.p)) * height;
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, c.r * span);
-    g.addColorStop(0, `rgba(${c.rgb}, ${c.a})`);
-    g.addColorStop(1, `rgba(${c.rgb}, 0)`);
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, width, height);
-  }
+  // Drifting warm sun glow
+  const gx = width * (0.32 + 0.06 * Math.sin(t * 0.05));
+  const gy = height * (0.22 + 0.03 * Math.cos(t * 0.04));
+  const glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, width * 0.55);
+  glow.addColorStop(0, 'rgba(248, 244, 205, 0.85)');
+  glow.addColorStop(1, 'rgba(248, 244, 205, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+
+  // Hill ridges, back to front
+  const steps = 64;
+  HILLS.forEach(([base, amp, freq, phase, color], i) => {
+    const sway = 0.012 * Math.sin(t * 0.03 + i * 1.9);
+    ctx.beginPath();
+    ctx.moveTo(0, ridgeY(0, base + sway, amp, freq, phase, height));
+    for (let s = 1; s <= steps; s++) {
+      const x = s / steps;
+      ctx.lineTo(x * width, ridgeY(x, base + sway, amp, freq, phase, height));
+    }
+    ctx.lineTo(width, height);
+    ctx.lineTo(0, height);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    // Atmospheric haze on the far ridges
+    if (i < 3) {
+      ctx.fillStyle = `rgba(214, 224, 176, ${0.28 - i * 0.08})`;
+      ctx.fill();
+    }
+  });
+
+  // Soft vignette to pull focus center like a photo
+  const vignette = ctx.createRadialGradient(
+    width * 0.5, height * 0.45, height * 0.35,
+    width * 0.5, height * 0.55, height * 1.1,
+  );
+  vignette.addColorStop(0, 'rgba(18, 30, 10, 0)');
+  vignette.addColorStop(1, 'rgba(18, 30, 10, 0.38)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, width, height);
 }
 
 function makeGrainTexture() {
@@ -69,12 +112,12 @@ export default function BackgroundCanvas() {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     function tick(now) {
-      drawField(ctx, canvas.width, canvas.height, now / 1000);
+      drawLandscape(ctx, canvas.width, canvas.height, now / 1000);
       frame = requestAnimationFrame(tick);
     }
 
     if (reduceMotion.matches) {
-      drawField(ctx, canvas.width, canvas.height, 0);
+      drawLandscape(ctx, canvas.width, canvas.height, 0);
     } else {
       frame = requestAnimationFrame(tick);
     }

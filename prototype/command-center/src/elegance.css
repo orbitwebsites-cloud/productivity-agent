@@ -44,7 +44,7 @@
   position: fixed;
   inset: 0;
   z-index: 20;
-  background: rgba(74, 52, 38, 0.22);
+  background: rgba(16, 26, 10, 0.35);
   backdrop-filter: blur(8px);
   opacity: 0;
   pointer-events: none;

@@ -1,7 +1,8 @@
 .command-center {
-  /* Soft-focus pastel wallpaper ground, so ink stays dark. */
-  --muted: rgba(74, 66, 56, 0.68);
-  --faint: rgba(74, 66, 56, 0.45);
+  /* Blurred-landscape ground: near-white ink like the reference card. */
+  --ink: #f6f8ee;
+  --muted: rgba(246, 248, 238, 0.72);
+  --faint: rgba(246, 248, 238, 0.48);
 
   position: relative;
   min-height: 100vh;
@@ -9,7 +10,7 @@
   grid-template-columns: 280px 1fr 300px;
   gap: var(--space-4);
   padding: var(--space-4);
-  background: #f3e8da;
+  background: #52683a;
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
@@ -24,7 +25,7 @@
   width: 112%;
   height: 112%;
   z-index: 0;
-  filter: blur(56px) saturate(1.2);
+  filter: blur(26px) saturate(1.12);
   pointer-events: none;
 }
 
@@ -34,8 +35,8 @@
   inset: 0;
   z-index: 0;
   background-repeat: repeat;
-  opacity: 0.05;
-  mix-blend-mode: multiply;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
   pointer-events: none;
 }
 
@@ -44,13 +45,13 @@
 .glass-panel {
   border-radius: 28px;
   background:
-    linear-gradient(120deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.02) 42%),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+    linear-gradient(120deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.05) 42%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.42);
   box-shadow:
-    0 28px 60px rgba(74, 52, 38, 0.16),
+    0 28px 60px rgba(14, 24, 8, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.75),
     inset 1px 0 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(255, 255, 255, 0.15);
@@ -90,11 +91,11 @@
   gap: var(--space-2);
   width: 100%;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.42);
   border-radius: var(--radius);
   background: linear-gradient(120deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
   box-shadow:
-    0 8px 20px rgba(74, 52, 38, 0.1),
+    0 8px 20px rgba(14, 24, 8, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
   color: var(--ink);
   text-align: left;
@@ -112,7 +113,7 @@
   border-color: rgba(255, 255, 255, 0.75);
   transform: translateY(-1px);
   box-shadow:
-    0 12px 28px rgba(74, 52, 38, 0.14),
+    0 12px 28px rgba(14, 24, 8, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
@@ -138,7 +139,7 @@
   border-radius: 999px;
   font-size: 1.25rem;
   background: linear-gradient(145deg, rgba(224, 137, 95, 0.35), rgba(224, 137, 95, 0.1));
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
@@ -166,16 +167,18 @@
   padding: var(--space-6) var(--space-5);
 }
 
+/* The stage sits over the bright sky band, so it takes dark ink like the
+   reference card's "Get Started" — the light ink is for text on glass. */
 .command-center-stage h1 {
   margin: 0 0 var(--space-2);
   font-size: 2.4rem;
   letter-spacing: -0.02em;
-  text-shadow: 0 2px 24px rgba(255, 255, 255, 0.5);
+  color: #2c3d1c;
 }
 
 .stage-hint {
   margin: 0;
-  color: var(--muted);
+  color: rgba(44, 61, 28, 0.72);
   font-size: 1.05rem;
 }
 
@@ -190,13 +193,13 @@
   width: min(420px, calc(100vw - 2 * var(--space-3)));
   border-radius: 28px;
   background:
-    linear-gradient(120deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.03) 45%),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+    linear-gradient(120deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.06) 45%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
   backdrop-filter: blur(36px) saturate(180%);
   -webkit-backdrop-filter: blur(36px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   box-shadow:
-    -28px 0 70px rgba(74, 52, 38, 0.22),
+    -28px 0 70px rgba(14, 24, 8, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
     inset 1px 0 0 rgba(255, 255, 255, 0.35);
   padding: var(--space-5);
@@ -230,7 +233,7 @@
   border-radius: 999px;
   font-size: 1.5rem;
   background: linear-gradient(145deg, rgba(224, 137, 95, 0.38), rgba(224, 137, 95, 0.12));
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
@@ -251,7 +254,7 @@
   flex-shrink: 0;
   width: 36px;
   height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 999px;
   background: linear-gradient(120deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.08));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -298,7 +301,7 @@
 .keyword-chip {
   padding: 8px var(--space-3);
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   background: linear-gradient(120deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
   color: var(--ink);
@@ -355,7 +358,7 @@
   align-items: center;
   padding: var(--space-2) var(--space-3);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.42);
   background: linear-gradient(120deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
   font-size: 0.9rem;
@@ -366,7 +369,7 @@
 }
 
 .signal-minutes {
-  color: var(--sage);
+  color: #d6e8a8;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
