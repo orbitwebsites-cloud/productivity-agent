@@ -2,18 +2,21 @@ export const PURSUITS = [
   {
     id: 'cook',
     name: 'Learn to Cook',
+    glyph: '🍳',
     keywords: ['cooking', 'recipe', 'youtube', 'kitchen'],
     streak: 6,
   },
   {
     id: 'tech',
     name: 'Tech Job',
+    glyph: '💻',
     keywords: ['code', 'github', 'claude', 'vscode', 'terminal'],
     streak: 14,
   },
   {
     id: 'fitness',
     name: 'Fitness',
+    glyph: '🏋️',
     keywords: ['workout', 'gym', 'run', 'health'],
     streak: 3,
   },

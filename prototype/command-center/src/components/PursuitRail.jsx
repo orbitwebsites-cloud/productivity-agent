@@ -1,6 +1,6 @@
 export default function PursuitRail({ pursuits, selectedId, isDrawerOpen, onSelect }) {
   return (
-    <nav className="pursuit-rail" aria-label="Pursuits">
+    <nav className="pursuit-rail glass-panel" aria-label="Pursuits">
       <h2 className="rail-heading">Pursuits</h2>
       <ul className="pursuit-list">
         {pursuits.map((pursuit) => {
@@ -14,8 +14,13 @@ export default function PursuitRail({ pursuits, selectedId, isDrawerOpen, onSele
                 aria-expanded={isActive}
                 onClick={(event) => onSelect(pursuit.id, event)}
               >
-                <span className="pursuit-name">{pursuit.name}</span>
-                <span className="pursuit-meta">{pursuit.streak}-day streak</span>
+                <span className="pursuit-icon" aria-hidden="true">
+                  {pursuit.glyph}
+                </span>
+                <span className="pursuit-text">
+                  <span className="pursuit-name">{pursuit.name}</span>
+                  <span className="pursuit-meta">{pursuit.streak}-day streak</span>
+                </span>
               </button>
             </li>
           );

@@ -1,6 +1,6 @@
 export default function SignalRail({ signals, expanded, onToggle }) {
   return (
-    <aside className="signal-rail" aria-label="Signals">
+    <aside className="signal-rail glass-panel" aria-label="Signals">
       <button
         type="button"
         className="signal-rail-toggle"

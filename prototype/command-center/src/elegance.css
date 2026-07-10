@@ -58,7 +58,9 @@
 
 .motion-drawer {
   transition: transform var(--transition-smooth);
-  transform: translateX(100%);
+  /* The drawer floats with an inset margin and casts a wide soft shadow, so
+     100% alone would leave both peeking in from the right edge. */
+  transform: translateX(calc(100% + 120px));
 }
 
 .motion-drawer.is-open {

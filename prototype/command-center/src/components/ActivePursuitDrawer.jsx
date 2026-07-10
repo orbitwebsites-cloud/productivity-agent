@@ -23,9 +23,14 @@ export default function ActivePursuitDrawer({
         onTransitionEnd={onTransitionEnd}
       >
         <div className="drawer-header">
-          <h2 id="drawer-heading" data-drawer-heading tabIndex={-1}>
-            {pursuit.name}
-          </h2>
+          <div className="drawer-title">
+            <span className="drawer-icon" aria-hidden="true">
+              {pursuit.glyph}
+            </span>
+            <h2 id="drawer-heading" data-drawer-heading tabIndex={-1}>
+              {pursuit.name}
+            </h2>
+          </div>
           <button
             type="button"
             className="drawer-close"
@@ -41,6 +46,7 @@ export default function ActivePursuitDrawer({
             Time counts toward <strong>{pursuit.name}</strong> when the app or
             window title matches one of its keywords.
           </p>
+          <h3 className="drawer-section-label">Keywords</h3>
           <ul className="keyword-list">
             {pursuit.keywords.map((keyword) => (
               <li key={keyword} className="keyword-chip">
