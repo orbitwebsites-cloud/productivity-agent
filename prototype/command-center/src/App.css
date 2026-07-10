@@ -1,30 +1,86 @@
 .command-center {
+  /* Coral Melt: cream text on a dark warm canvas, so remap the ink tokens
+     for everything inside rather than restyling each component. */
+  --ink: #fbf1e6;
+  --muted: rgba(251, 241, 230, 0.62);
+  --faint: rgba(251, 241, 230, 0.4);
+
+  position: relative;
   min-height: 100vh;
   display: grid;
   grid-template-columns: 280px 1fr 300px;
   gap: var(--space-4);
   padding: var(--space-4);
   background:
-    radial-gradient(1100px 700px at 12% -8%, rgba(224, 137, 95, 0.38), transparent 60%),
-    radial-gradient(900px 650px at 108% 18%, rgba(127, 156, 140, 0.32), transparent 55%),
-    radial-gradient(800px 600px at 45% 115%, rgba(201, 100, 66, 0.22), transparent 60%),
-    radial-gradient(700px 500px at 70% 40%, rgba(216, 168, 78, 0.14), transparent 55%),
-    var(--paper);
+    radial-gradient(900px 600px at 85% -10%, rgba(216, 168, 78, 0.22), transparent 60%),
+    linear-gradient(150deg, #3b1b12 0%, #2a120c 48%, #1e0d08 100%);
   background-attachment: fixed;
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
 }
 
-/* Frosted glass panel treatment shared by the rails and drawer */
+/* Slow-drifting glow blobs behind the glass — what makes it read as liquid */
+.command-center::before,
+.command-center::after {
+  content: '';
+  position: fixed;
+  z-index: 0;
+  width: 55vw;
+  height: 55vw;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+}
+
+.command-center::before {
+  top: -18vw;
+  left: -12vw;
+  background: radial-gradient(circle, rgba(224, 137, 95, 0.75), transparent 65%);
+  animation: drift-a 26s ease-in-out infinite alternate;
+}
+
+.command-center::after {
+  bottom: -22vw;
+  right: -14vw;
+  background: radial-gradient(circle, rgba(127, 156, 140, 0.55), transparent 65%);
+  animation: drift-b 34s ease-in-out infinite alternate;
+}
+
+@keyframes drift-a {
+  to {
+    transform: translate(14vw, 10vh) scale(1.18);
+  }
+}
+
+@keyframes drift-b {
+  to {
+    transform: translate(-12vw, -8vh) scale(0.88);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .command-center::before,
+  .command-center::after {
+    animation: none;
+  }
+}
+
+/* Clear glossy glass: near-transparent fill, definition comes from the rim
+   light and the diagonal sheen baked into the background stack. */
 .glass-panel {
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(28px) saturate(160%);
-  -webkit-backdrop-filter: blur(28px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.02) 42%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
-    0 24px 48px rgba(47, 43, 37, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    0 28px 60px rgba(10, 5, 3, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 1px 0 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .pursuit-rail,
@@ -61,12 +117,12 @@
   gap: var(--space-2);
   width: 100%;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.28);
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
   box-shadow:
-    0 6px 16px rgba(47, 43, 37, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    0 8px 20px rgba(10, 5, 3, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
   color: var(--ink);
   text-align: left;
   cursor: pointer;
@@ -79,21 +135,25 @@
 }
 
 .pursuit-item:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.09));
+  border-color: rgba(255, 255, 255, 0.3);
   transform: translateY(-1px);
   box-shadow:
-    0 10px 24px rgba(47, 43, 37, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 12px 28px rgba(10, 5, 3, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .pursuit-item:focus-visible {
-  outline: 2px solid var(--coral);
+  outline: 2px solid var(--coral-light);
   outline-offset: 2px;
 }
 
 .pursuit-item.active {
-  border-color: var(--coral);
-  background: rgba(255, 255, 255, 0.55);
+  border-color: var(--coral-light);
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.1));
+  box-shadow:
+    0 12px 32px rgba(201, 100, 66, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .pursuit-icon {
@@ -104,8 +164,9 @@
   height: 44px;
   border-radius: 999px;
   font-size: 1.25rem;
-  background: linear-gradient(145deg, rgba(127, 156, 140, 0.28), rgba(127, 156, 140, 0.14));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  background: linear-gradient(145deg, rgba(224, 137, 95, 0.4), rgba(224, 137, 95, 0.14));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .pursuit-text {
@@ -127,6 +188,8 @@
 /* Center stage */
 
 .command-center-stage {
+  position: relative;
+  z-index: 1;
   padding: var(--space-6) var(--space-5);
 }
 
@@ -134,6 +197,7 @@
   margin: 0 0 var(--space-2);
   font-size: 2.4rem;
   letter-spacing: -0.02em;
+  text-shadow: 0 2px 24px rgba(10, 5, 3, 0.4);
 }
 
 .stage-hint {
@@ -142,7 +206,7 @@
   font-size: 1.05rem;
 }
 
-/* Drawer: a floating inset glass sheet */
+/* Drawer: floating clear-glass sheet */
 
 .motion-drawer {
   position: fixed;
@@ -152,18 +216,22 @@
   z-index: 30;
   width: min(420px, calc(100vw - 2 * var(--space-3)));
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.38);
-  backdrop-filter: blur(32px) saturate(160%);
-  -webkit-backdrop-filter: blur(32px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.03) 45%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+  backdrop-filter: blur(36px) saturate(180%);
+  -webkit-backdrop-filter: blur(36px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.26);
   box-shadow:
-    -28px 0 64px rgba(47, 43, 37, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    -28px 0 70px rgba(10, 5, 3, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 1px 0 0 rgba(255, 255, 255, 0.16);
   padding: var(--space-5);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   overflow-y: auto;
+  color: var(--ink);
 }
 
 .drawer-header {
@@ -188,8 +256,9 @@
   height: 52px;
   border-radius: 999px;
   font-size: 1.5rem;
-  background: linear-gradient(145deg, rgba(127, 156, 140, 0.3), rgba(127, 156, 140, 0.14));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  background: linear-gradient(145deg, rgba(224, 137, 95, 0.45), rgba(224, 137, 95, 0.16));
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .drawer-header h2 {
@@ -200,7 +269,7 @@
 }
 
 .drawer-header h2:focus-visible {
-  outline: 2px solid var(--coral);
+  outline: 2px solid var(--coral-light);
   outline-offset: 4px;
   border-radius: 6px;
 }
@@ -209,10 +278,10 @@
   flex-shrink: 0;
   width: 36px;
   height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 4px 10px rgba(47, 43, 37, 0.08);
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
   color: var(--ink);
   font-size: 1.2rem;
   line-height: 1;
@@ -221,11 +290,11 @@
 }
 
 .drawer-close:hover {
-  background: rgba(255, 255, 255, 0.6);
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.12));
 }
 
 .drawer-close:focus-visible {
-  outline: 2px solid var(--coral);
+  outline: 2px solid var(--coral-light);
   outline-offset: 2px;
 }
 
@@ -256,11 +325,9 @@
 .keyword-chip {
   padding: 8px var(--space-3);
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.3);
-  box-shadow:
-    0 4px 10px rgba(47, 43, 37, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
   color: var(--ink);
   font-size: 0.9rem;
 }
@@ -285,7 +352,7 @@
 }
 
 .signal-rail-toggle:focus-visible {
-  outline: 2px solid var(--coral);
+  outline: 2px solid var(--coral-light);
   outline-offset: 2px;
   border-radius: 8px;
 }
@@ -315,11 +382,9 @@
   align-items: center;
   padding: var(--space-2) var(--space-3);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.28);
-  box-shadow:
-    0 4px 10px rgba(47, 43, 37, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26);
   font-size: 0.9rem;
 }
 
@@ -328,7 +393,7 @@
 }
 
 .signal-minutes {
-  color: var(--sage);
+  color: #a9c4b4;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -341,5 +406,6 @@
   .pursuit-rail,
   .signal-rail {
     position: static;
+    min-height: 0;
   }
 }
