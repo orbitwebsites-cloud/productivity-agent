@@ -2,7 +2,19 @@
 /* Import this at the top of app.css, panel.css, and buddy.css */
 /* Usage: @import url('design-tokens.css'); or paste at top of file */
 
+/* Fraunces Variable (latin, weight + optical size). SIL OFL — see
+   fonts/LICENSE-OFL-fraunces.txt. Display face used for headings; body/UI
+   text stays on --font-sans for legibility on dense screens. */
+@font-face {
+  font-family: 'Fraunces Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('fonts/fraunces-latin-opsz-normal.woff2') format('woff2-variations');
+}
+
 :root {
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
   /* ========== BRAND COLORS ========== */
   --coral: #C96442;
   --coral-light: #E0895F;

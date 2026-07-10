@@ -50,7 +50,11 @@ function onSample(config, sample) {
 
   const app = sample.app || 'Unknown';
   const goal = activePursuit(config);
-  const isDistraction = sample.category === 'Distraction';
+  // `distraction` covers both user-typed distraction strings (category
+  // 'Distraction') and the built-in time-sinks flagged by the knowledge base
+  // (YouTube, games, social). Fall back to the category check for samples
+  // logged before the flag existed.
+  const isDistraction = sample.distraction === true || sample.category === 'Distraction';
   const offPursuit = mode === 'jarvis' && goal && sample.pursuit !== goal;
 
   if (!isDistraction && !offPursuit) { reset(); return; }

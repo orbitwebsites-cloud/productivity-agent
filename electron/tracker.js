@@ -31,7 +31,7 @@ async function sampleOnce(config) {
 
     // 'private' tier still gets tracked — it's metadata-only, which is all v1 does.
     const title = win.title || '';
-    const { category, productive, pursuit } = classify(appName, title, config);
+    const { category, productive, pursuit, distraction } = classify(appName, title, config);
 
     insertActivity({
       ts: Date.now(),
@@ -41,9 +41,10 @@ async function sampleOnce(config) {
       category,
       productive,
       pursuit,
+      distraction,
       durationMs: config.trackIntervalMs
     });
-    if (sampleCb) { try { sampleCb({ app: appName, title, pid: win.pid || null, category, productive, pursuit }); } catch { /* ignore */ } }
+    if (sampleCb) { try { sampleCb({ app: appName, title, pid: win.pid || null, category, productive, pursuit, distraction }); } catch { /* ignore */ } }
     lastError = null;
   } catch (err) {
     // Most likely: missing macOS Screen Recording / Accessibility permission.

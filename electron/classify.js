@@ -14,7 +14,7 @@ function classify(appName, title, config) {
   for (const p of config.pursuits || []) {
     for (const kw of p.keywords || []) {
       if (kw && hay.includes(kw.toLowerCase())) {
-        return { category: p.name, productive: true, pursuit: p.name };
+        return { category: p.name, productive: true, pursuit: p.name, distraction: false };
       }
     }
   }
@@ -22,17 +22,20 @@ function classify(appName, title, config) {
   // 2) User-added distractions.
   for (const d of config.distractions || []) {
     if (d && hay.includes(d.toLowerCase())) {
-      return { category: 'Distraction', productive: false, pursuit: null };
+      return { category: 'Distraction', productive: false, pursuit: null, distraction: true };
     }
   }
 
   // 3) Built-in knowledge base — auto-categorize common apps (Development,
   //    Communication, Design, Browsing, Entertainment, …) with no user setup.
+  //    Propagate the KB's `distraction` flag so built-in time-sinks (YouTube,
+  //    games, social) actually drive the accountability push, not just the
+  //    handful of strings a user typed in themselves.
   const kb = classifyByKnowledge(hay);
-  if (kb) return { category: kb.category, productive: kb.productive, pursuit: null };
+  if (kb) return { category: kb.category, productive: kb.productive, pursuit: null, distraction: !!kb.distraction };
 
   // 4) Genuinely unknown.
-  return { category: 'Other', productive: false, pursuit: null };
+  return { category: 'Other', productive: false, pursuit: null, distraction: false };
 }
 
 module.exports = { classify };
