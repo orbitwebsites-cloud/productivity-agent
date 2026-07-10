@@ -7,6 +7,8 @@
 <link rel="stylesheet" href="app.css" />
 </head>
 <body>
+  <canvas id="bgCanvas" class="bg-canvas" aria-hidden="true"></canvas>
+  <div id="bgGrain" class="bg-grain" aria-hidden="true"></div>
   <section id="setupGate" class="setup-gate" hidden>
     <div id="setupWelcome" class="setup-panel">
       <img class="setup-mascot" src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" />
@@ -365,6 +367,7 @@
       </section>
     </main>
   </div>
+  <script src="background.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
