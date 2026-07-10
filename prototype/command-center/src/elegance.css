@@ -1,0 +1,107 @@
+:root {
+  --coral: #c96442;
+  --coral-light: #e0895f;
+  --coral-dark: #9f3d25;
+  --coral-glow: rgba(201, 100, 66, 0.28);
+
+  --ink: #2f2b25;
+  --muted: #8a8377;
+  --faint: #b7b0a4;
+
+  --paper: #faf7f2;
+  --surface: #ffffff;
+
+  --sage: #7f9c8c;
+  --amber: #d8a84e;
+  --blue: #2d596f;
+
+  --space-1: 8px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+
+  --radius: 20px;
+  --transition-smooth: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-fast: 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* Kept non-zero (not "none") so transitionend still fires and focus
+       management stays in sync with the DOM instead of hanging. */
+    --transition-smooth: 0.01ms;
+    --transition-fast: 0.01ms;
+  }
+}
+
+.motion-fade {
+  transition: opacity var(--transition-fast);
+}
+
+.motion-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(47, 43, 37, 0.32);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-smooth);
+}
+
+.motion-backdrop.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.motion-drawer {
+  transition: transform var(--transition-smooth);
+  transform: translateX(100%);
+}
+
+.motion-drawer.is-open {
+  transform: translateX(0);
+}
+
+/* Constant border-width; only color + an inset glow move, so the breathing
+   state never shifts layout the way animating border-width would. */
+.motion-breathe {
+  animation: pulse-border 3s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    border-color: var(--coral-glow);
+    box-shadow: inset 0 0 0 0 rgba(201, 100, 66, 0);
+  }
+  50% {
+    border-color: var(--coral);
+    box-shadow: inset 0 0 0 3px var(--coral-glow);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-breathe {
+    animation: none;
+    border-color: var(--coral);
+    box-shadow: inset 0 0 0 2px var(--coral-glow);
+  }
+}
+
+.motion-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--transition-smooth);
+}
+
+.motion-collapse.is-expanded {
+  grid-template-rows: 1fr;
+}
+
+.motion-collapse-inner {
+  overflow: hidden;
+  min-height: 0;
+}
