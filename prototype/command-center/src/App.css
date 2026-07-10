@@ -12,7 +12,7 @@
   padding: var(--space-4);
   background: #52683a;
   color: var(--ink);
-  font-family: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Fraunces Variable', Georgia, serif;
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -74,10 +74,10 @@
 
 .rail-heading {
   margin: var(--space-1) var(--space-1) var(--space-4);
-  font-size: 0.72rem;
-  font-weight: 560;
+  font-size: 0.74rem;
+  font-weight: 580;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   color: var(--muted);
 }
 
@@ -156,8 +156,8 @@
 }
 
 .pursuit-name {
-  font-weight: 570;
-  letter-spacing: -0.01em;
+  font-weight: 590;
+  letter-spacing: 0;
 }
 
 .pursuit-meta {
@@ -178,8 +178,6 @@
    reference card's "Get Started" — the light ink is for text on glass. */
 .command-center-stage h1 {
   margin: 0 0 var(--space-2);
-  font-family: 'Fraunces Variable', Georgia, serif;
-  font-optical-sizing: auto;
   font-size: 2.8rem;
   font-weight: 480;
   letter-spacing: -0.015em;
@@ -250,8 +248,6 @@
 
 .drawer-header h2 {
   margin: 0;
-  font-family: 'Fraunces Variable', Georgia, serif;
-  font-optical-sizing: auto;
   font-size: 1.6rem;
   font-weight: 500;
   letter-spacing: -0.01em;
