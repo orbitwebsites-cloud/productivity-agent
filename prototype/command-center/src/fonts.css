@@ -1,0 +1,9 @@
+/* Inter Variable (latin, weight 100-900 + optical size axis), vendored from
+   @fontsource-variable/inter. SIL OFL — see fonts/LICENSE-OFL.txt. */
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('./fonts/inter-latin-opsz-normal.woff2') format('woff2-variations');
+}

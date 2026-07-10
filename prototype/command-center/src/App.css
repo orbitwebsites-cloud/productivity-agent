@@ -12,7 +12,12 @@
   padding: var(--space-4);
   background: #52683a;
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-size: 15px;
+  line-height: 1.5;
   overflow-x: hidden;
 }
 
@@ -69,10 +74,10 @@
 
 .rail-heading {
   margin: var(--space-1) var(--space-1) var(--space-4);
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 560;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   color: var(--muted);
 }
 
@@ -151,12 +156,14 @@
 }
 
 .pursuit-name {
-  font-weight: 600;
+  font-weight: 570;
+  letter-spacing: -0.01em;
 }
 
 .pursuit-meta {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Center stage */
@@ -171,8 +178,9 @@
    reference card's "Get Started" — the light ink is for text on glass. */
 .command-center-stage h1 {
   margin: 0 0 var(--space-2);
-  font-size: 2.4rem;
-  letter-spacing: -0.02em;
+  font-size: 2.5rem;
+  font-weight: 640;
+  letter-spacing: -0.035em;
   color: #2c3d1c;
 }
 
@@ -239,8 +247,9 @@
 
 .drawer-header h2 {
   margin: 0;
-  font-size: 1.5rem;
-  letter-spacing: -0.01em;
+  font-size: 1.45rem;
+  font-weight: 620;
+  letter-spacing: -0.02em;
   outline: none;
 }
 
@@ -282,10 +291,10 @@
 
 .drawer-section-label {
   margin: var(--space-4) 0 var(--space-2);
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 560;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   color: var(--muted);
 }
 
@@ -318,10 +327,10 @@
   border: none;
   background: transparent;
   font: inherit;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 560;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   color: var(--muted);
   cursor: pointer;
   padding: var(--space-1) var(--space-1) var(--space-3);
@@ -366,11 +375,12 @@
 
 .signal-label {
   font-weight: 500;
+  letter-spacing: -0.005em;
 }
 
 .signal-minutes {
   color: #d6e8a8;
-  font-weight: 600;
+  font-weight: 570;
   font-variant-numeric: tabular-nums;
 }
 
