@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PURSUITS, SIGNALS } from './data/pursuits';
 import { usePersistentState } from './hooks/usePersistentState';
+import BackgroundCanvas from './components/BackgroundCanvas';
 import PursuitRail from './components/PursuitRail';
 import ActivePursuitDrawer from './components/ActivePursuitDrawer';
 import SignalRail from './components/SignalRail';
@@ -62,6 +63,7 @@ export default function App() {
 
   return (
     <div className="command-center">
+      <BackgroundCanvas />
       <PursuitRail
         pursuits={PURSUITS}
         selectedId={selectedId}

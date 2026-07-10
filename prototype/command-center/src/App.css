@@ -9,60 +9,34 @@
   grid-template-columns: 280px 1fr 300px;
   gap: var(--space-4);
   padding: var(--space-4);
-  background:
-    radial-gradient(1000px 700px at 80% -10%, rgba(216, 168, 78, 0.3), transparent 60%),
-    radial-gradient(1200px 900px at -10% 110%, rgba(224, 137, 95, 0.25), transparent 60%),
-    linear-gradient(150deg, #f7ede1 0%, #f2e3d2 48%, #ecdcc9 100%);
-  background-attachment: fixed;
+  background: #f3e8da;
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
 }
 
-/* Slow-drifting glow blobs behind the glass — what makes it read as liquid */
-.command-center::before,
-.command-center::after {
-  content: '';
+/* Canvas-rendered color field; low-res redraws upscaled and blurred here so
+   it reads as an out-of-focus render. Oversized to hide the blur's edge fade. */
+.bg-canvas {
   position: fixed;
+  top: -6%;
+  left: -6%;
+  width: 112%;
+  height: 112%;
   z-index: 0;
-  width: 55vw;
-  height: 55vw;
-  border-radius: 50%;
-  filter: blur(110px);
+  filter: blur(56px) saturate(1.2);
   pointer-events: none;
 }
 
-.command-center::before {
-  top: -18vw;
-  left: -12vw;
-  background: radial-gradient(circle, rgba(224, 137, 95, 0.55), transparent 65%);
-  animation: drift-a 26s ease-in-out infinite alternate;
-}
-
-.command-center::after {
-  bottom: -22vw;
-  right: -14vw;
-  background: radial-gradient(circle, rgba(127, 156, 140, 0.45), transparent 65%);
-  animation: drift-b 34s ease-in-out infinite alternate;
-}
-
-@keyframes drift-a {
-  to {
-    transform: translate(14vw, 10vh) scale(1.18);
-  }
-}
-
-@keyframes drift-b {
-  to {
-    transform: translate(-12vw, -8vh) scale(0.88);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .command-center::before,
-  .command-center::after {
-    animation: none;
-  }
+/* Film grain kills the flat "CSS gradient" look */
+.bg-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-repeat: repeat;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  pointer-events: none;
 }
 
 /* Clear glossy glass: near-transparent fill, definition comes from the rim
