@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #080a12; }
+      body { font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif; }
+
+      .scene { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; }
+      .scene-bg { position: absolute; inset: 0; background: linear-gradient(135deg, #080a12 0%, #0f1219 50%, #080a12 100%); }
+
+      .title-card { flex-direction: column; gap: 24px; z-index: 1; }
+      .title-card h1 { font-size: 72px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+      .title-card p { font-size: 28px; color: rgba(255,255,255,0.6); font-weight: 400; }
+      .title-card .accent { color: #E8845C; }
+
+      .compare-scene { flex-direction: column; gap: 32px; z-index: 1; }
+      .compare-label { font-size: 18px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+      .compare-row { display: flex; gap: 48px; align-items: center; }
+      .compare-panel { position: relative; border-radius: 16px; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.08); }
+      .compare-panel img { display: block; }
+      .compare-panel .tag { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); color: #fff; font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 6px; }
+      .compare-panel.before .tag { background: rgba(255,255,255,0.15); }
+      .compare-panel.after .tag { background: rgba(232,132,92,0.8); }
+
+      .vs-badge { font-size: 24px; font-weight: 800; color: rgba(255,255,255,0.3); }
+
+      .end-card { flex-direction: column; gap: 20px; z-index: 1; }
+      .end-card h2 { font-size: 56px; font-weight: 800; color: #fff; }
+      .end-card .features { display: flex; gap: 40px; margin-top: 16px; }
+      .end-card .feature { text-align: center; }
+      .end-card .feature .num { font-size: 48px; font-weight: 800; color: #E8845C; }
+      .end-card .feature .label { font-size: 16px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="38" data-width="1920" data-height="1080">
+
+      <!-- Scene 1: Title Card (0-4s) -->
+      <div id="title" class="scene title-card clip" data-start="0" data-duration="4" data-track-index="1">
+        <div class="scene-bg"></div>
+        <h1>ScreenBuddy <span class="accent">Redesign</span></h1>
+        <p>Dark Glassmorphism UI — Before &amp; After</p>
+      </div>
+
+      <!-- Scene 2: App Pursuits (4-9s) -->
+      <div id="scene-app" class="scene compare-scene clip" data-start="4" data-duration="5" data-track-index="1">
+        <div class="scene-bg"></div>
+        <div class="compare-label">Life Pursuits Page</div>
+        <div class="compare-row">
+          <div class="compare-panel before">
+            <img src="screenshots/before/app-pursuits.png" width="560" height="350" />
+            <div class="tag">BEFORE</div>
+          </div>
+          <div class="vs-badge">→</div>
+          <div class="compare-panel after">
+            <img src="screenshots/after/app-pursuits.png" width="560" height="350" />
+            <div class="tag">AFTER</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 3: Panel (9-14s) -->
+      <div id="scene-panel" class="scene compare-scene clip" data-start="9" data-duration="5" data-track-index="1">
+        <div class="scene-bg"></div>
+        <div class="compare-label">Chat Panel</div>
+        <div class="compare-row">
+          <div class="compare-panel before">
+            <img src="screenshots/before/panel.png" width="340" height="460" />
+            <div class="tag">BEFORE</div>
+          </div>
+          <div class="vs-badge">→</div>
+          <div class="compare-panel after">
+            <img src="screenshots/after/panel.png" width="340" height="460" />
+            <div class="tag">AFTER</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 4: Buddy (14-19s) -->
+      <div id="scene-buddy" class="scene compare-scene clip" data-start="14" data-duration="5" data-track-index="1">
+        <div class="scene-bg"></div>
+        <div class="compare-label">Buddy Widget</div>
+        <div class="compare-row">
+          <div class="compare-panel before">
+            <img src="screenshots/before/buddy.png" width="300" height="440" />
+            <div class="tag">BEFORE</div>
+          </div>
+          <div class="vs-badge">→</div>
+          <div class="compare-panel after">
+            <img src="screenshots/after/buddy.png" width="300" height="440" />
+            <div class="tag">AFTER</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 5: Orb (19-24s) -->
+      <div id="scene-orb" class="scene compare-scene clip" data-start="19" data-duration="5" data-track-index="1">
+        <div class="scene-bg"></div>
+        <div class="compare-label">Floating Orb</div>
+        <div class="compare-row">
+          <div class="compare-panel before">
+            <img src="screenshots/before/orb.png" width="200" height="200" />
+            <div class="tag">BEFORE</div>
+          </div>
+          <div class="vs-badge">→</div>
+          <div class="compare-panel after">
+            <img src="screenshots/after/orb.png" width="200" height="200" />
+            <div class="tag">AFTER</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 6: Warden (24-29s) -->
+      <div id="scene-warden" class="scene compare-scene clip" data-start="24" data-duration="5" data-track-index="1">
+        <div class="scene-bg"></div>
+        <div class="compare-label">Warden Overlay</div>
+        <div class="compare-row">
+          <div class="compare-panel before">
+            <img src="screenshots/before/warden.png" width="460" height="350" />
+            <div class="tag">BEFORE</div>
+          </div>
+          <div class="vs-badge">→</div>
+          <div class="compare-panel after">
+            <img src="screenshots/after/warden.png" width="460" height="350" />
+            <div class="tag">AFTER</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 7: End Card (29-38s) -->
+      <div id="end" class="scene end-card clip" data-start="29" data-duration="9" data-track-index="1">
+        <div class="scene-bg"></div>
+        <h2>Dark Glassmorphism</h2>
+        <div class="features">
+          <div class="feature"><div class="num">13</div><div class="label">Files Updated</div></div>
+          <div class="feature"><div class="num">5</div><div class="label">Pages Redesigned</div></div>
+          <div class="feature"><div class="num">0</div><div class="label">Hardcoded Values</div></div>
+          <div class="feature"><div class="num">100%</div><div class="label">Token-Driven</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      // Title card
+      tl.from("#title h1", { opacity: 0, y: 40, duration: 0.8 }, 0.2);
+      tl.from("#title p", { opacity: 0, y: 20, duration: 0.6 }, 0.6);
+
+      // Scene transitions — fade in panels, slide from sides
+      const scenes = ["scene-app", "scene-panel", "scene-buddy", "scene-orb", "scene-warden"];
+      scenes.forEach((id, i) => {
+        const start = 4 + i * 5;
+        tl.from(`#${id} .compare-label`, { opacity: 0, y: -20, duration: 0.5 }, start);
+        tl.from(`#${id} .before`, { opacity: 0, x: -60, duration: 0.6 }, start + 0.2);
+        tl.from(`#${id} .vs-badge`, { opacity: 0, scale: 0.5, duration: 0.3 }, start + 0.5);
+        tl.from(`#${id} .after`, { opacity: 0, x: 60, duration: 0.6 }, start + 0.4);
+      });
+
+      // End card
+      tl.from("#end h2", { opacity: 0, y: 40, duration: 0.8 }, 30);
+      tl.from("#end .feature", { opacity: 0, y: 30, duration: 0.5, stagger: 0.15 }, 30.5);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

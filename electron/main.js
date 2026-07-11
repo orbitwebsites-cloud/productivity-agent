@@ -107,7 +107,7 @@ function showApp() {
   appWin = new BrowserWindow({
     width: 880, height: 620, minWidth: 680, minHeight: 480,
     title: 'ScreenBuddy',
-    backgroundColor: '#faf7f2',
+    backgroundColor: '#080a12',
     icon: IDLE_PNG,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
   });

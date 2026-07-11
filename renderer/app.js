@@ -251,13 +251,26 @@ function splitName(raw) {
 }
 
 async function savePursuits() {
+  const btn = document.getElementById('savePursuits');
   const pursuits = [...pursuitList.querySelectorAll('.prow-edit')].map((r) => {
     const { emoji, name } = splitName(r.querySelector('.name').value);
     const keywords = r.querySelector('.kw').value.split(',').map((k) => k.trim()).filter(Boolean);
     return { name, emoji, keywords };
   }).filter((p) => p.name);
-  await window.buddy.savePursuits(pursuits);
-  flash('saveMsg', 'Saved ✅ Pesto will sort new time into these.');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  try {
+    await window.buddy.savePursuits(pursuits);
+    btn.classList.remove('loading');
+    btn.classList.add('ripple');
+    setTimeout(() => btn.classList.remove('ripple'), 700);
+    flash('saveMsg', 'Saved ✅ Pesto will sort new time into these.');
+  } catch (e) {
+    btn.classList.remove('loading');
+    flash('saveMsg', 'Failed to save.');
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 document.getElementById('visitSite').addEventListener('click', () => window.buddy.openSite());
@@ -269,13 +282,16 @@ document.getElementById('scanApps').addEventListener('click', async () => {
   const btn = document.getElementById('scanApps');
   const msg = document.getElementById('scanMsg');
   btn.disabled = true;
+  btn.classList.add('loading');
   msg.textContent = 'Scanning your apps…';
   try {
     const r = await window.buddy.scanApps();
+    btn.classList.remove('loading');
     const cats = (r.categories || []).map((c) => `${c.emoji} ${c.name}`).join(', ');
     msg.textContent = `Scanned ${r.appsScanned} apps · recognized ${r.recognized} · built ${(r.categories || []).length} pursuits${cats ? ' (' + cats + ')' : ''}`;
     await loadPursuits();
   } catch (e) {
+    btn.classList.remove('loading');
     msg.textContent = "Couldn't scan just now.";
   } finally {
     btn.disabled = false;
@@ -313,13 +329,26 @@ async function loadPrivacy() {
 }
 
 async function saveTiers() {
+  const btn = document.getElementById('saveTiers');
   const tiers = {};
   document.querySelectorAll('.tierrow').forEach((row) => {
     const on = row.querySelector('.seg button.on');
     if (on) tiers[row.dataset.app] = on.dataset.t;
   });
-  await window.buddy.saveTiers(tiers);
-  flash('tierMsg', 'Saved ✅');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  try {
+    await window.buddy.saveTiers(tiers);
+    btn.classList.remove('loading');
+    btn.classList.add('ripple');
+    setTimeout(() => btn.classList.remove('ripple'), 700);
+    flash('tierMsg', 'Saved ✅');
+  } catch (e) {
+    btn.classList.remove('loading');
+    flash('tierMsg', 'Failed to save.');
+  } finally {
+    btn.disabled = false;
+  }
 }
 document.getElementById('saveTiers').addEventListener('click', saveTiers);
 
@@ -339,6 +368,7 @@ async function loadJarvis() {
 }
 
 async function saveJarvis(clearGoal = false) {
+  const btn = document.getElementById(clearGoal ? 'clearJarvisGoal' : 'saveJarvis');
   const activePursuit = clearGoal ? '' : document.getElementById('activePursuit').value;
   const settings = {
     mode: document.getElementById('jarvisMode').value,
@@ -351,9 +381,21 @@ async function saveJarvis(clearGoal = false) {
       wardenSeconds: Math.max(3, Number(document.getElementById('wardenSeconds').value || 10))
     }
   };
-  await window.buddy.saveJarvis(settings);
-  flash('jarvisMsg', clearGoal ? 'Active pursuit cleared.' : 'Jarvis mode saved.');
-  await loadJarvis();
+  btn.classList.add('loading');
+  btn.disabled = true;
+  try {
+    await window.buddy.saveJarvis(settings);
+    btn.classList.remove('loading');
+    btn.classList.add('ripple');
+    setTimeout(() => btn.classList.remove('ripple'), 700);
+    flash('jarvisMsg', clearGoal ? 'Active pursuit cleared.' : 'Jarvis mode saved.');
+    await loadJarvis();
+  } catch (e) {
+    btn.classList.remove('loading');
+    flash('jarvisMsg', 'Failed to save.');
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 document.getElementById('saveJarvis').addEventListener('click', () => saveJarvis(false));
@@ -394,11 +436,16 @@ async function saveJarvisWa() {
   };
   const btn = document.getElementById('saveJarvisWa');
   btn.disabled = true;
+  btn.classList.add('loading');
   try {
     const result = await window.buddy.jarvisWhatsappSet(settings);
+    btn.classList.remove('loading');
+    btn.classList.add('ripple');
+    setTimeout(() => btn.classList.remove('ripple'), 700);
     renderJarvisWaStatus(result.status);
     flash('jarvisWaMsg', settings.enabled ? 'Starting… scan the QR below.' : 'Turned off.');
   } catch (err) {
+    btn.classList.remove('loading');
     flash('jarvisWaMsg', `Error: ${err.message}`);
   } finally {
     btn.disabled = false;
@@ -486,12 +533,15 @@ async function runBrowserTask() {
   const instruction = input.value.trim();
   if (!instruction) return;
   btn.disabled = true;
+  btn.classList.add('loading');
   out.hidden = false;
   out.textContent = 'Working on it…';
   try {
     const res = await window.buddy.browserTask(instruction);
+    btn.classList.remove('loading');
     out.textContent = res?.text || 'Done.';
   } catch (err) {
+    btn.classList.remove('loading');
     out.textContent = `Error: ${err.message}`;
   } finally {
     btn.disabled = false;
@@ -518,17 +568,26 @@ async function loadAutofill() {
 }
 
 async function saveAutofill() {
+  const btn = document.getElementById('saveAutofill');
   const profile = {};
   AUTOFILL_FIELDS.forEach((key) => {
     const el = document.getElementById(autofillInputId(key));
     if (el) profile[key] = el.value.trim();
   });
   const settings = { enabled: document.getElementById('autofillEnabled').checked, profile };
+  btn.classList.add('loading');
+  btn.disabled = true;
   try {
     await window.buddy.autofillSet(settings);
+    btn.classList.remove('loading');
+    btn.classList.add('ripple');
+    setTimeout(() => btn.classList.remove('ripple'), 700);
     flash('autofillMsg', settings.enabled ? 'Saved. Bridge is running.' : 'Saved. Bridge is off.');
   } catch (err) {
+    btn.classList.remove('loading');
     flash('autofillMsg', `Error: ${err.message}`);
+  } finally {
+    btn.disabled = false;
   }
 }
 document.getElementById('saveAutofill').addEventListener('click', saveAutofill);

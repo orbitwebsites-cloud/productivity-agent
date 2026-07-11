@@ -10,15 +10,16 @@
   <canvas id="bgCanvas" class="bg-canvas" aria-hidden="true"></canvas>
   <div id="bgGrain" class="bg-grain" aria-hidden="true"></div>
   <section id="setupGate" class="setup-gate" hidden>
+    <div class="deco-orbs" aria-hidden="true"><div class="deco-orb d1"></div><div class="deco-orb d2"></div><div class="deco-orb d3"></div></div>
     <div id="setupWelcome" class="setup-panel">
-      <img class="setup-mascot" src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" />
+      <div class="mascot-wrap"><div class="mascot-glass"></div><img class="setup-mascot" src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" /></div>
       <div class="setup-copy">
         <p class="eyebrow">Welcome</p>
         <h1>You're all set — Pesto runs right out of the box.</h1>
         <p class="lead">ScreenBuddy tracks what you work on <b>locally on this computer</b> — no account,
           no cloud, nothing to install. Smart AI answers are an optional <b>Premium</b> upgrade you can
           turn on anytime.</p>
-        <div class="setup-list">
+        <div class="setup-list stagger-children">
           <div><b>Private activity tracking</b><span>Stays 100% on this machine. No account needed.</span></div>
           <div><b>Honest daily insights</b><span>Ask Pesto what you worked on and how your day went.</span></div>
           <div><b>AI answers <em>(Premium)</em></b><span>Natural-language coaching — sign in to unlock later.</span></div>
@@ -57,7 +58,7 @@
     </div>
 
     <div id="setupAccount" class="setup-panel" hidden>
-      <img class="setup-mascot" src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" />
+      <div class="mascot-wrap"><div class="mascot-glass"></div><img class="setup-mascot" src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" /></div>
       <div class="setup-copy">
         <p class="eyebrow">One more thing</p>
         <h1>Want to create your account?</h1>
@@ -93,41 +94,41 @@
           <div class="btag">Your productivity companion</div>
         </div>
       </div>
-      <nav class="nav">
-        <button class="navitem active" data-page="pursuits">Life Pursuits</button>
-        <button class="navitem" data-page="privacy">Privacy Tiers</button>
-        <button class="navitem" data-page="jarvis">Jarvis Mode</button>
-        <button class="navitem" data-page="premium">Premium ✨</button>
+      <nav class="nav" role="tablist" aria-label="Main navigation">
+        <button id="pursuits-tab" class="navitem active" data-page="pursuits" role="tab" aria-selected="true" aria-controls="page-pursuits">Life Pursuits</button>
+        <button id="privacy-tab" class="navitem" data-page="privacy" role="tab" aria-selected="false" aria-controls="page-privacy">Privacy Tiers</button>
+        <button id="jarvis-tab" class="navitem" data-page="jarvis" role="tab" aria-selected="false" aria-controls="page-jarvis">Jarvis Mode</button>
+        <button id="premium-tab" class="navitem" data-page="premium" role="tab" aria-selected="false" aria-controls="page-premium">Premium ✨</button>
       </nav>
-      <button id="visitSite" class="ghostbtn" style="margin-top:auto">🌐 Visit our website</button>
+      <button id="visitSite" class="ghostbtn" style="margin-top:auto" aria-label="Visit ScreenBuddy website">🌐 Visit our website</button>
     </aside>
 
     <main class="main">
-      <section id="page-pursuits" class="page active">
+      <section id="page-pursuits" class="page active" role="tabpanel" aria-labelledby="pursuits-tab">
         <h1>Life Pursuits</h1>
         <p class="lead">Tell Pesto what counts as <b>your</b> work. Time is credited to a pursuit
           when the app or window title contains any of its keywords.</p>
 
         <div class="scanrow">
           <button id="scanApps" class="save">🔍 Scan my PC for apps</button>
-          <span id="scanMsg" class="savemsg"></span>
+          <span id="scanMsg" class="savemsg" aria-live="polite"></span>
         </div>
 
-        <div id="pursuitList" class="plist"></div>
+        <div id="pursuitList" class="plist stagger-children"></div>
         <button id="addPursuit" class="ghostbtn">+ Add a pursuit</button>
 
         <div class="recent">
           <div class="recent-h">Apps you've used recently - click to add as a keyword</div>
-          <div id="recentApps" class="recent-apps"><span class="empty">Nothing tracked yet.</span></div>
+          <div id="recentApps" class="recent-apps stagger-children"><span class="empty">Nothing tracked yet.</span></div>
         </div>
 
         <div class="saverow">
           <button id="savePursuits" class="save">Save pursuits</button>
-          <span id="saveMsg" class="savemsg"></span>
+          <span id="saveMsg" class="savemsg" aria-live="polite"></span>
         </div>
       </section>
 
-      <section id="page-privacy" class="page" hidden>
+      <section id="page-privacy" class="page" hidden role="tabpanel" aria-labelledby="privacy-tab">
         <h1>Privacy Tiers</h1>
         <p class="lead">Choose how ScreenBuddy handles each app. Unknown apps default to
           <b>Private</b>. Everything stays on your computer.</p>
@@ -136,14 +137,14 @@
           <div><b>Private</b><span>Metadata only: app name + title. No pixels are ever captured.</span></div>
           <div><b>Off</b><span>Completely invisible to ScreenBuddy.</span></div>
         </div>
-        <div id="tierList" class="tierlist"></div>
+        <div id="tierList" class="tierlist stagger-children"></div>
         <div class="saverow">
           <button id="saveTiers" class="save">Save privacy</button>
-          <span id="tierMsg" class="savemsg"></span>
+          <span id="tierMsg" class="savemsg" aria-live="polite"></span>
         </div>
       </section>
 
-      <section id="page-jarvis" class="page" hidden>
+      <section id="page-jarvis" class="page" hidden role="tabpanel" aria-labelledby="jarvis-tab">
         <h1>Jarvis Mode</h1>
         <p class="lead">Pesto can actively guard your current pursuit. If you drift for too long,
           he shows a countdown, then safely minimizes the distraction and tries to bring your work back.</p>
@@ -178,10 +179,10 @@
         <div class="saverow">
           <button id="saveJarvis" class="save">Save Jarvis mode</button>
           <button id="clearJarvisGoal" class="ghostsave">Clear active pursuit</button>
-          <span id="jarvisMsg" class="savemsg"></span>
+          <span id="jarvisMsg" class="savemsg" aria-live="polite"></span>
         </div>
 
-        <h1 style="margin-top: 32px;">WhatsApp Remote (beta)</h1>
+        <h1 style="margin-top: var(--space-8);">WhatsApp Remote (beta)</h1>
         <p class="lead">Text Pesto on WhatsApp and it answers/acts using the exact same brain as
           this app — "what was I working on today?", "focus on Tech Job for 45 min", plus a couple
           of <code>!git</code> dev-ops commands.</p>
@@ -202,15 +203,15 @@
 
           <p id="jarvisWaStatus" class="hint">Status: off</p>
           <img id="jarvisWaQr" alt="Scan with WhatsApp > Linked devices" hidden
-               style="width:220px;height:220px;margin-top:8px;border-radius:8px;" />
+               style="width:220px;height:220px;margin-top:8px;border-radius:var(--radius-sm);" />
         </div>
 
         <div class="saverow">
           <button id="saveJarvisWa" class="save">Save WhatsApp remote</button>
-          <span id="jarvisWaMsg" class="savemsg"></span>
+          <span id="jarvisWaMsg" class="savemsg" aria-live="polite"></span>
         </div>
 
-        <h1 style="margin-top: 32px;">Browser Control (beta)</h1>
+        <h1 style="margin-top: var(--space-8);">Browser Control (beta)</h1>
         <p class="lead">Let Pesto <b>drive your browser</b> for you — "open the FAQ and tell me the
           refund policy", "find the cheapest flight to NYC next Friday". It reads the active tab,
           then clicks, types, and navigates a few steps to get it done, reporting back when it's
@@ -254,10 +255,10 @@
         </div>
 
         <div class="saverow">
-          <span id="browserControlMsg" class="savemsg"></span>
+          <span id="browserControlMsg" class="savemsg" aria-live="polite"></span>
         </div>
 
-        <h1 style="margin-top: 32px;">Browser Autofill (beta)</h1>
+        <h1 style="margin-top: var(--space-8);">Browser Autofill (beta)</h1>
         <p class="lead">Fills web forms — applications, sign-ups — from the profile below, for
           you to review before submitting (<code>!autofill</code> on WhatsApp, or the extension
           icon). Or hand it a task: <code>!browser open the FAQ page and tell me the refund
@@ -311,11 +312,11 @@
         <div class="saverow">
           <button id="saveAutofill" class="save">Save autofill profile</button>
           <button id="testAutofill" class="ghostsave">Fill active browser tab now</button>
-          <span id="autofillMsg" class="savemsg"></span>
+          <span id="autofillMsg" class="savemsg" aria-live="polite"></span>
         </div>
       </section>
 
-      <section id="page-premium" class="page" hidden>
+      <section id="page-premium" class="page" hidden role="tabpanel" aria-labelledby="premium-tab">
         <h1>Premium ✨</h1>
         <p class="lead">Everything you use today stays <b>free and local</b>. Premium adds Pesto's
           <b>AI answers</b> — natural-language coaching about your day, powered by our servers.
@@ -349,7 +350,7 @@
               <p class="hint">Cancel anytime. 7-day free trial.</p>
               <button id="premUpgradeMonthly" class="save" style="width: 100%;">Start free trial</button>
             </div>
-            <div class="agentbox" style="margin: 0; border-color: #f0b429;">
+            <div class="agentbox" style="margin: 0; border-color: var(--amber);">
               <div style="font-weight: 700; font-size: 15px;">Annual — save 33%</div>
               <div style="font-size: 22px; font-weight: 700; margin: 4px 0;">$9.99<span style="font-size: 13px; font-weight: 400;">/mo</span></div>
               <p class="hint">Billed $119.88/yr. 7-day free trial.</p>
@@ -363,7 +364,7 @@
           </div>
         </div>
 
-        <p id="premMsg" class="savemsg"></p>
+        <p id="premMsg" class="savemsg" aria-live="polite"></p>
       </section>
     </main>
   </div>

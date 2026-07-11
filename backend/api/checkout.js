@@ -60,7 +60,12 @@ module.exports = async (req, res) => {
   if (!r.ok) {
     const detail = await r.text().catch(() => '');
     console.error('stripe checkout error', r.status, detail.slice(0, 500));
-    return send(res, 502, { error: "Couldn't start checkout — try again shortly." });
+    let msg = "Couldn't start checkout — try again shortly.";
+    try {
+      const parsed = JSON.parse(detail);
+      if (parsed.error && parsed.error.message) msg = parsed.error.message;
+    } catch { /* keep default */ }
+    return send(res, 502, { error: msg });
   }
   const session = await r.json();
   return send(res, 200, { url: session.url });

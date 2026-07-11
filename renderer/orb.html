@@ -3,29 +3,63 @@
 <head>
 <meta charset="UTF-8" />
 <title>Pesto</title>
+<link rel="stylesheet" href="design-tokens.css" />
 <style>
   html, body { margin:0; height:100%; background:transparent; overflow:hidden;
     -webkit-user-select:none; user-select:none; cursor:pointer; }
   @keyframes orbIdle {
-    0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 8px 14px rgba(120,60,30,0.35)); }
-    50% { transform: translateY(-4px) scale(1.02); filter: drop-shadow(0 12px 20px rgba(201,100,66,0.45)); }
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-5px) scale(1.03); }
+  }
+  @keyframes orbGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(232,132,92,0.15), 0 0 50px rgba(232,132,92,0.06); }
+    50% { box-shadow: 0 0 35px rgba(232,132,92,0.3), 0 0 70px rgba(232,132,92,0.12); }
+  }
+  @keyframes ringSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
   #orb { position:absolute; inset:0; display:grid; place-items:center; }
+  .orb-glass {
+    position:absolute; width:98px; height:98px; border-radius:50%;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur-strong));
+    -webkit-backdrop-filter: blur(var(--glass-blur-strong));
+    border: 1px solid var(--glass-border);
+    animation: orbGlow 4s ease-in-out infinite, orbIdle 3.6s ease-in-out infinite;
+    pointer-events:none;
+  }
+  .orb-glass::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:50%;
+    background: var(--glass-highlight-strong);
+    border-radius: inherit; pointer-events:none;
+  }
+  .orb-ring {
+    position:absolute; width:106px; height:106px; border-radius:50%;
+    border: 1px solid rgba(255,255,255,0.04);
+    border-top-color: rgba(232,132,92,0.15);
+    animation: ringSpin 12s linear infinite;
+    pointer-events:none;
+  }
   #orb img {
-    width:84px; height:84px; object-fit:contain; -webkit-user-drag:none; pointer-events:none;
-    filter: drop-shadow(0 8px 14px rgba(120,60,30,0.35));
+    width:80px; height:80px; object-fit:contain; -webkit-user-drag:none; pointer-events:none;
+    filter: drop-shadow(0 8px 16px rgba(232,132,92,0.4));
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
     animation: orbIdle 3.6s ease-in-out infinite;
+    position:relative; z-index:1;
   }
   #orb:hover img {
-    transform: translateY(-6px) scale(1.12);
-    filter: drop-shadow(0 16px 28px rgba(201,100,66,0.55));
+    transform: translateY(-7px) scale(1.15);
+    filter: drop-shadow(0 18px 30px rgba(232,132,92,0.55));
   }
-  #orb:active img { transform: scale(0.95); transition-duration: 0.1s; }
+  #orb:active img { transform: scale(0.92); transition-duration: 0.1s; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  }
 </style>
 </head>
 <body>
-  <div id="orb"><img src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" /></div>
+  <div id="orb"><div class="orb-ring"></div><div class="orb-glass"></div><img src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" /></div>
   <script src="orb.js"></script>
 </body>
 </html>
