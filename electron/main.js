@@ -156,7 +156,10 @@ function trayMenu() {
     },
     { label: 'Pause / resume tracking', click: () => saveConfig({ trackingEnabled: !loadConfig().trackingEnabled }) },
     { type: 'separator' },
-    { label: 'Visit our website', click: () => shell.openExternal('https://screenbudy.orbitboyzz.me/') },
+    { label: 'Visit our website', click: () => {
+      const url = 'https://screenbudy.orbitboyzz.me/';
+      if (url.startsWith('https://')) shell.openExternal(url);
+    } },
     { type: 'separator' },
     { label: 'Quit ScreenBuddy', click: () => app.quit() }
   ]);
@@ -426,8 +429,12 @@ function extensionDir() {
 }
 
 // ---- panel IPC ----
-ipcMain.handle('buddy:ask', (_e, question) => buddyAsk(question));
-ipcMain.handle('buddy:today', () => {
+ipcMain.handle('buddy:ask', (event, question) => {
+  requireAppWindow(event);
+  return buddyAsk(String(question || "").slice(0, 2000));
+});
+ipcMain.handle('buddy:today', (event) => {
+  requireAppWindow(event);
   const start = answers.startOfDay(Date.now());
   const s = answers.summarize(start, Date.now());
   return {
@@ -436,8 +443,12 @@ ipcMain.handle('buddy:today', () => {
     byPursuit: s.byPursuit.map(([name, ms]) => ({ name, ms, label: answers.fmt(ms) }))
   };
 });
-ipcMain.handle('buddy:getConfig', () => loadConfig());
-ipcMain.handle('buddy:status', () => {
+ipcMain.handle('buddy:getConfig', (event) => {
+  requireAppWindow(event);
+  return loadConfig();
+});
+ipcMain.handle('buddy:status', (event) => {
+  requireAppWindow(event);
   const cfg = loadConfig();
   return {
     tracking: cfg.trackingEnabled,
@@ -474,7 +485,10 @@ function relabelHistory(config) {
 
 ipcMain.handle('buddy:savePursuits', (event, pursuits) => {
   requireAppWindow(event);
-  const cfg = saveConfig({ pursuits: Array.isArray(pursuits) ? pursuits : [] });
+  const sanitizedPursuits = Array.isArray(pursuits)
+    ? pursuits.filter(p => typeof p === 'string' && p.length <= 100 && !/[\\\/\.\x00-\x1f]/.test(p))
+    : [];
+  const cfg = saveConfig({ pursuits: sanitizedPursuits });
   try { relabelHistory(cfg); } catch { /* non-fatal */ }
   return cfg;
 });
@@ -525,7 +539,8 @@ ipcMain.handle('buddy:openSetupHelp', async (event, errorText) => {
   url.searchParams.set('screen', 'first-run-setup');
   url.searchParams.set('platform', process.platform);
   url.searchParams.set('version', app.getVersion());
-  url.searchParams.set('error', String(errorText || cfg.setup?.lastError || 'Unknown setup error').slice(0, 1800));
+  url.searchParams.set('error', encodeURIComponent(String(errorText || cfg.setup?.lastError || 'Unknown setup error').slice(0, 1800)));
+  if (url.protocol !== 'https:') throw new Error('Only HTTPS URLs are allowed.');
   await shell.openExternal(url.toString());
   return { ok: true, url: url.toString() };
 });
@@ -633,7 +648,10 @@ ipcMain.handle('buddy:scanApps', async (event) => {
   return buildProfileFromScan(false);
 });
 ipcMain.handle('buddy:openApp', () => showApp());
-ipcMain.handle('buddy:openSite', () => shell.openExternal('https://screenbudy.orbitboyzz.me/'));
+ipcMain.handle('buddy:openSite', () => {
+  const url = 'https://screenbudy.orbitboyzz.me/';
+  if (url.startsWith('https://')) shell.openExternal(url);
+});
 
 // ---- Premium (hosted AI: Supabase auth + Stripe sub) ----
 ipcMain.handle('premium:status', () => premium.status());
@@ -651,7 +669,8 @@ ipcMain.handle('premium:upgrade', (event, plan) => { requireAppWindow(event); re
 
 // ---- Accountability IPC ----
 // Warden overlay result: minimize (reversible) or cancel.
-ipcMain.handle('warden:hide', async () => {
+ipcMain.handle('warden:hide', async (event) => {
+  requireAppWindow(event);
   closeWarden();
   try { await minimizeActiveWindow(); } catch { /* ignore */ }
   if (lastPrimaryWindow) {
@@ -714,7 +733,7 @@ ipcMain.handle('buddy:jarvisWhatsappSet', async (event, settings) => {
     jarvisWhatsapp: {
       ...(cur.jarvisWhatsapp || {}),
       enabled,
-      projectDir: typeof settings?.projectDir === 'string' ? settings.projectDir : (cur.jarvisWhatsapp?.projectDir || '')
+      projectDir: typeof settings?.projectDir === 'string' ? path.resolve(settings.projectDir) : (cur.jarvisWhatsapp?.projectDir || '')
     }
   });
 
@@ -785,7 +804,7 @@ ipcMain.handle('buddy:browserControlSet', (event, settings) => {
 
 ipcMain.handle('buddy:browserTask', async (event, instruction) => {
   requireAppWindow(event);
-  const text = String(instruction || '').trim();
+  const text = String(instruction || '').trim().slice(0, 5000);
   if (!text) return { text: 'Type what you want Pesto to do in the browser first.' };
   try {
     return { text: await runBrowserTask(text) };
@@ -837,13 +856,15 @@ async function restoreWorkspace(label) {
   return { text: `${appText}${goalText}` };
 }
 
-ipcMain.handle('buddy:runAction', async (_event, actionId) => {
+ipcMain.handle('buddy:runAction', async (event, actionId) => {
+  requireAppWindow(event);
   if (actionId === 'restore-workspace:yesterday') return restoreWorkspace('yesterday');
   return { text: "I don't know how to run that action yet." };
 });
 
 // Apps the user has actually used recently; helps build pursuit keywords.
-ipcMain.handle('buddy:recentApps', () => {
+ipcMain.handle('buddy:recentApps', (event) => {
+  requireAppWindow(event);
   const { getActivityBetween } = require('./db');
   const rows = getActivityBetween(Date.now() - 3 * 86400000, Date.now());
   const m = new Map();
