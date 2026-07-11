@@ -31,7 +31,17 @@ module.exports = async (req, res) => {
   let body = {};
   try { body = await readJson(req); } catch { /* default to monthly below */ }
   const plan = body.plan === 'annual' ? 'annual' : 'monthly';
-  const priceId = plan === 'annual' ? env('STRIPE_PRICE_ID_ANNUAL', env('STRIPE_PRICE_ID')) : env('STRIPE_PRICE_ID');
+
+  // Resolve config up front so a missing key/price returns a clear message
+  // instead of crashing the function (env() throws on a missing required var).
+  let secretKey, priceId;
+  try {
+    secretKey = env('STRIPE_SECRET_KEY');
+    priceId = plan === 'annual' ? env('STRIPE_PRICE_ID_ANNUAL', env('STRIPE_PRICE_ID')) : env('STRIPE_PRICE_ID');
+  } catch (err) {
+    console.error('checkout config error', err.message);
+    return send(res, 500, { error: `Payments aren't configured yet (${err.message}).`, code: 'not_configured' });
+  }
   const trialDays = Number(env('TRIAL_DAYS', '7'));
 
   const proto = req.headers['x-forwarded-proto'] || 'https';
@@ -41,7 +51,7 @@ module.exports = async (req, res) => {
   const r = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env('STRIPE_SECRET_KEY')}`,
+      Authorization: `Bearer ${secretKey}`,
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     body: form({
@@ -60,7 +70,14 @@ module.exports = async (req, res) => {
   if (!r.ok) {
     const detail = await r.text().catch(() => '');
     console.error('stripe checkout error', r.status, detail.slice(0, 500));
-    return send(res, 502, { error: "Couldn't start checkout — try again shortly." });
+    // Surface Stripe's own reason (e.g. "No such price", test/live mismatch,
+    // invalid key) so the failure is diagnosable from the app instead of opaque.
+    let reason = '';
+    try { reason = (JSON.parse(detail).error || {}).message || ''; } catch { /* not JSON */ }
+    return send(res, 502, {
+      error: reason ? `Stripe couldn't start checkout: ${reason}` : "Couldn't start checkout — try again shortly.",
+      code: 'stripe_error'
+    });
   }
   const session = await r.json();
   return send(res, 200, { url: session.url });
