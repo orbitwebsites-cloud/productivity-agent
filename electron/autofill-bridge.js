@@ -36,6 +36,14 @@ function start({ profileProvider } = {}) {
     res.writeHead(404);
     res.end();
   });
+  // Without this, a bound port (e.g. another ScreenBuddy instance already
+  // running -- installed app + dev build, or a leftover process) throws an
+  // uncaught exception that crashes the ENTIRE app, not just this optional
+  // bridge. Fail quietly instead: the feature just stays off.
+  server.on('error', (err) => {
+    console.error('[autofill-bridge] failed to start:', err && err.message ? err.message : err);
+    server = null;
+  });
   server.listen(PORT, '127.0.0.1');
 
   wss = new WebSocketServer({ server });
