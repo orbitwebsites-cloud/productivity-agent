@@ -6,8 +6,8 @@
     {
       "type": "UNVALIDATED_EXTERNAL_URL",
       "severity": "MEDIUM",
-      "file": "D:\\productivity-agent-security-test\\electron\\main.js",
-      "line": 544,
+      "file": "D:\\productivity-agent-hackfix\\electron\\main.js",
+      "line": 549,
       "detail": "shell.openExternal called without URL validation — could open malicious links",
       "cwe": "CWE-601",
       "scanner": "scan-ipc"
@@ -15,7 +15,7 @@
     {
       "type": "API_KEY",
       "severity": "INFO",
-      "file": "D:\\productivity-agent-security-test\\electron\\config.js",
+      "file": "D:\\productivity-agent-hackfix\\electron\\config.js",
       "line": 115,
       "detail": "Potential api_key found: change-me-local-dev... [THRESHOLD: repeated finding across rounds — likely accepted risk]",
       "cwe": "CWE-798",
@@ -23,19 +23,29 @@
       "thrashing": true
     },
     {
+      "type": "MISSING_INPUT_SANITIZATION",
+      "severity": "MEDIUM",
+      "detail": "Pursuit names not sanitized before storage — could contain XSS or path traversal",
+      "cwe": "CWE-20",
+      "file": "D:\\productivity-agent-hackfix\\electron\\main.js",
+      "line": 483,
+      "handler": "pursuit_name_validation",
+      "scanner": "scan-injection"
+    },
+    {
       "type": "UNSANITIZED_INSTRUCTION",
       "severity": "MEDIUM",
       "detail": "Browser task instruction not sanitized — could include malicious commands",
       "cwe": "CWE-20",
-      "file": "D:\\productivity-agent-security-test\\electron\\main.js",
-      "line": 805,
+      "file": "D:\\productivity-agent-hackfix\\electron\\main.js",
+      "line": 808,
       "handler": "browser_task_instruction",
       "scanner": "scan-injection"
     },
     {
       "type": "RACE_CONDITION",
       "severity": "INFO",
-      "file": "D:\\productivity-agent-security-test\\electron\\main.js",
+      "file": "D:\\productivity-agent-hackfix\\electron\\main.js",
       "line": 0,
       "detail": "Config load/save operations not synchronized — concurrent IPC calls could corrupt config [THRESHOLD: repeated finding across rounds — likely accepted risk]",
       "cwe": "CWE-362",
@@ -45,7 +55,7 @@
     {
       "type": "PRIVILEGE_ESCALATION",
       "severity": "INFO",
-      "file": "D:\\productivity-agent-security-test\\electron\\main.js",
+      "file": "D:\\productivity-agent-hackfix\\electron\\main.js",
       "line": 0,
       "detail": "Mode changes persisted without authorization check — any renderer can modify accountability mode [THRESHOLD: repeated finding across rounds — likely accepted risk]",
       "cwe": "CWE-269",
@@ -56,8 +66,8 @@
   "patches": [
     {
       "finding": "UNVALIDATED_EXTERNAL_URL",
-      "file": "D:\\productivity-agent-security-test\\electron\\main.js",
-      "line": 541,
+      "file": "D:\\productivity-agent-hackfix\\electron\\main.js",
+      "line": 549,
       "severity": "MEDIUM",
       "cwe": "CWE-601",
       "applied": false,
@@ -65,7 +75,7 @@
     },
     {
       "finding": "API_KEY",
-      "file": "D:\\productivity-agent-security-test\\electron\\config.js",
+      "file": "D:\\productivity-agent-hackfix\\electron\\config.js",
       "line": 115,
       "severity": "HIGH",
       "cwe": "CWE-798",
@@ -74,8 +84,8 @@
     },
     {
       "finding": "MISSING_INPUT_SANITIZATION",
-      "file": "D:\\productivity-agent-security-test\\electron\\main.js",
-      "line": 486,
+      "file": "D:\\productivity-agent-hackfix\\electron\\main.js",
+      "line": 483,
       "severity": "MEDIUM",
       "cwe": "CWE-20",
       "applied": false,
@@ -83,8 +93,8 @@
     },
     {
       "finding": "UNSANITIZED_INSTRUCTION",
-      "file": "D:\\productivity-agent-security-test\\electron\\main.js",
-      "line": 802,
+      "file": "D:\\productivity-agent-hackfix\\electron\\main.js",
+      "line": 808,
       "severity": "MEDIUM",
       "cwe": "CWE-20",
       "applied": false,
@@ -92,7 +102,7 @@
     },
     {
       "finding": "RACE_CONDITION",
-      "file": "D:\\productivity-agent-security-test\\electron\\main.js",
+      "file": "D:\\productivity-agent-hackfix\\electron\\main.js",
       "line": 0,
       "severity": "INFO",
       "cwe": "CWE-362",
@@ -101,7 +111,7 @@
     },
     {
       "finding": "PRIVILEGE_ESCALATION",
-      "file": "D:\\productivity-agent-security-test\\electron\\main.js",
+      "file": "D:\\productivity-agent-hackfix\\electron\\main.js",
       "line": 0,
       "severity": "INFO",
       "cwe": "CWE-269",
@@ -110,28 +120,26 @@
     }
   ],
   "thrashing": {
-    "UNVALIDATED_EXTERNAL_URL:D:\\productivity-agent-security-test\\electron\\main.js:159": 1,
-    "IPC_MISSING_VALIDATION:D:\\productivity-agent-security-test\\electron\\main.js:429": 1,
-    "IPC_MISSING_VALIDATION:D:\\productivity-agent-security-test\\electron\\main.js:430": 1,
-    "IPC_MISSING_VALIDATION:D:\\productivity-agent-security-test\\electron\\main.js:439": 1,
-    "IPC_MISSING_VALIDATION:D:\\productivity-agent-security-test\\electron\\main.js:440": 1,
-    "UNVALIDATED_EXTERNAL_URL:D:\\productivity-agent-security-test\\electron\\main.js:529": 1,
-    "UNVALIDATED_EXTERNAL_URL:D:\\productivity-agent-security-test\\electron\\main.js:636": 1,
-    "IPC_MISSING_VALIDATION:D:\\productivity-agent-security-test\\electron\\main.js:654": 1,
-    "IPC_MISSING_VALIDATION:D:\\productivity-agent-security-test\\electron\\main.js:840": 1,
-    "IPC_MISSING_VALIDATION:D:\\productivity-agent-security-test\\electron\\main.js:846": 1,
-    "API_KEY:D:\\productivity-agent-security-test\\electron\\config.js:115": 3,
-    "MISSING_LENGTH_CHECK:D:\\productivity-agent-security-test\\electron\\main.js:429": 1,
-    "MISSING_INPUT_SANITIZATION:D:\\productivity-agent-security-test\\electron\\main.js:475": 1,
-    "URL_INJECTION:D:\\productivity-agent-security-test\\electron\\main.js:519": 1,
-    "PATH_TRAVERSAL:D:\\productivity-agent-security-test\\electron\\main.js:709": 1,
-    "UNSANITIZED_INSTRUCTION:D:\\productivity-agent-security-test\\electron\\main.js:786": 1,
-    "RACE_CONDITION:D:\\productivity-agent-security-test\\electron\\main.js:0": 3,
-    "PRIVILEGE_ESCALATION:D:\\productivity-agent-security-test\\electron\\main.js:0": 3,
-    "UNVALIDATED_EXTERNAL_URL:D:\\productivity-agent-security-test\\electron\\main.js:541": 1,
-    "MISSING_INPUT_SANITIZATION:D:\\productivity-agent-security-test\\electron\\main.js:486": 1,
-    "UNSANITIZED_INSTRUCTION:D:\\productivity-agent-security-test\\electron\\main.js:802": 1,
-    "UNVALIDATED_EXTERNAL_URL:D:\\productivity-agent-security-test\\electron\\main.js:544": 1,
-    "UNSANITIZED_INSTRUCTION:D:\\productivity-agent-security-test\\electron\\main.js:805": 1
+    "UNVALIDATED_EXTERNAL_URL:D:\\productivity-agent-hackfix\\electron\\main.js:159": 1,
+    "IPC_MISSING_VALIDATION:D:\\productivity-agent-hackfix\\electron\\main.js:429": 1,
+    "IPC_MISSING_VALIDATION:D:\\productivity-agent-hackfix\\electron\\main.js:430": 1,
+    "IPC_MISSING_VALIDATION:D:\\productivity-agent-hackfix\\electron\\main.js:439": 1,
+    "IPC_MISSING_VALIDATION:D:\\productivity-agent-hackfix\\electron\\main.js:440": 1,
+    "UNVALIDATED_EXTERNAL_URL:D:\\productivity-agent-hackfix\\electron\\main.js:529": 1,
+    "UNVALIDATED_EXTERNAL_URL:D:\\productivity-agent-hackfix\\electron\\main.js:636": 1,
+    "IPC_MISSING_VALIDATION:D:\\productivity-agent-hackfix\\electron\\main.js:654": 1,
+    "IPC_MISSING_VALIDATION:D:\\productivity-agent-hackfix\\electron\\main.js:840": 1,
+    "IPC_MISSING_VALIDATION:D:\\productivity-agent-hackfix\\electron\\main.js:846": 1,
+    "API_KEY:D:\\productivity-agent-hackfix\\electron\\config.js:115": 3,
+    "MISSING_LENGTH_CHECK:D:\\productivity-agent-hackfix\\electron\\main.js:429": 1,
+    "MISSING_INPUT_SANITIZATION:D:\\productivity-agent-hackfix\\electron\\main.js:475": 1,
+    "URL_INJECTION:D:\\productivity-agent-hackfix\\electron\\main.js:519": 1,
+    "PATH_TRAVERSAL:D:\\productivity-agent-hackfix\\electron\\main.js:709": 1,
+    "UNSANITIZED_INSTRUCTION:D:\\productivity-agent-hackfix\\electron\\main.js:786": 1,
+    "RACE_CONDITION:D:\\productivity-agent-hackfix\\electron\\main.js:0": 3,
+    "PRIVILEGE_ESCALATION:D:\\productivity-agent-hackfix\\electron\\main.js:0": 3,
+    "UNVALIDATED_EXTERNAL_URL:D:\\productivity-agent-hackfix\\electron\\main.js:549": 2,
+    "MISSING_INPUT_SANITIZATION:D:\\productivity-agent-hackfix\\electron\\main.js:483": 2,
+    "UNSANITIZED_INSTRUCTION:D:\\productivity-agent-hackfix\\electron\\main.js:808": 2
   }
 }

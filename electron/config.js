@@ -112,7 +112,7 @@ const DEFAULTS = {
   provider: 'hermes',
   hermes: {
     baseUrl: 'http://127.0.0.1:8642/v1',
-    apiKey: 'change-me-local-dev', // Placeholder/default dev value — not a real key
+    apiKey: 'change-me-local-dev', // PLACEHOLDER: Replace with your local Hermes API key
     model: 'hermes-agent',
     sessionKey: 'screenbuddy-pesto'
   },
