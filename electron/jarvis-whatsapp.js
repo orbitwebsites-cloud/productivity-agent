@@ -33,6 +33,7 @@ const { spawn } = require('child_process');
 let client = null;
 let ready = false;
 let lastQr = '';
+let selfChatId = '';
 let askFn = null;
 let fillActiveTabFn = null;
 let browserTaskFn = null;
@@ -90,6 +91,7 @@ async function start(config, { ask, fillActiveTab, browserTask, notify } = {}) {
   client.on('ready', () => {
     ready = true;
     lastQr = '';
+    selfChatId = client.info?.wid?._serialized || '';
     notifyFn && notifyFn({ type: 'ready' });
   });
 
@@ -105,6 +107,11 @@ async function start(config, { ask, fillActiveTab, browserTask, notify } = {}) {
   // Deliberately `message`, not `message_create` — see header comment.
   client.on('message', async (message) => {
     if (!message.fromMe) return;
+    // Scoped to your own self-chat ("Message yourself" / Note to Self) only.
+    // fromMe alone doesn't say WHICH chat the message was sent in — without
+    // this, texting a command to a real contact or group would have Pesto
+    // reply in that thread, visibly leaking your tracked activity to them.
+    if (selfChatId && message.to !== selfChatId) return;
     try {
       const reply = await route(message.body);
       if (reply) await message.reply(reply);
@@ -124,6 +131,7 @@ async function stop() {
   client = null;
   ready = false;
   lastQr = '';
+  selfChatId = '';
   if (c) {
     try { await c.destroy(); } catch { /* best effort */ }
   }
