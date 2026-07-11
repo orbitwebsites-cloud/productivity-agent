@@ -429,12 +429,13 @@ function extensionDir() {
 }
 
 // ---- panel IPC ----
-ipcMain.handle('buddy:ask', (event, question) => {
-  requireAppWindow(event);
-  return buddyAsk(String(question || "").slice(0, 2000));
-});
-ipcMain.handle('buddy:today', (event) => {
-  requireAppWindow(event);
+// buddy:ask / buddy:today / buddy:status are called from BOTH the Settings
+// window (app.js) and the floating widget/panel (buddy.js, panel.js), which
+// run in their own separate BrowserWindows — they intentionally do NOT get
+// requireAppWindow(), which only recognizes the Settings window and would
+// break the widget's chat, daily summary, and status indicator entirely.
+ipcMain.handle('buddy:ask', (_event, question) => buddyAsk(String(question || '').slice(0, 2000)));
+ipcMain.handle('buddy:today', () => {
   const start = answers.startOfDay(Date.now());
   const s = answers.summarize(start, Date.now());
   return {
@@ -447,8 +448,7 @@ ipcMain.handle('buddy:getConfig', (event) => {
   requireAppWindow(event);
   return loadConfig();
 });
-ipcMain.handle('buddy:status', (event) => {
-  requireAppWindow(event);
+ipcMain.handle('buddy:status', () => {
   const cfg = loadConfig();
   return {
     tracking: cfg.trackingEnabled,
@@ -483,11 +483,29 @@ function relabelHistory(config) {
   rewriteAll(rows);
 }
 
+// A pursuit is { name: string, keywords: string[] } (see renderer/app.js's
+// savePursuits and electron/classify.js) — not a bare string. Strips control
+// characters and caps lengths/counts rather than rejecting whole pursuits,
+// so ordinary names/keywords (which legitimately contain '.', '/', etc. —
+// e.g. "github.com") survive a save.
+function sanitizePursuits(pursuits) {
+  if (!Array.isArray(pursuits)) return [];
+  const cleanText = (v, maxLen) =>
+    typeof v === 'string' ? v.replace(/[\x00-\x1f]/g, '').slice(0, maxLen).trim() : '';
+  return pursuits
+    .filter((p) => p && typeof p === 'object')
+    .map((p) => ({
+      name: cleanText(p.name, 100),
+      keywords: Array.isArray(p.keywords)
+        ? p.keywords.map((k) => cleanText(k, 100)).filter(Boolean).slice(0, 50)
+        : []
+    }))
+    .filter((p) => p.name);
+}
+
 ipcMain.handle('buddy:savePursuits', (event, pursuits) => {
   requireAppWindow(event);
-  const sanitizedPursuits = Array.isArray(pursuits)
-    ? pursuits.filter(p => typeof p === 'string' && p.length <= 100 && !/[\\\/\.\x00-\x1f]/.test(p))
-    : [];
+  const sanitizedPursuits = sanitizePursuits(pursuits);
   const cfg = saveConfig({ pursuits: sanitizedPursuits });
   try { relabelHistory(cfg); } catch { /* non-fatal */ }
   return cfg;
@@ -668,9 +686,11 @@ ipcMain.handle('premium:signOut', (event) => { requireAppWindow(event); return p
 ipcMain.handle('premium:upgrade', (event, plan) => { requireAppWindow(event); return premium.upgrade(plan); });
 
 // ---- Accountability IPC ----
-// Warden overlay result: minimize (reversible) or cancel.
-ipcMain.handle('warden:hide', async (event) => {
-  requireAppWindow(event);
+// Warden overlay result: minimize (reversible) or cancel. The Warden runs in
+// its own BrowserWindow (see showWarden), not appWin, so this intentionally
+// has no requireAppWindow() guard — adding one would leave the overlay stuck
+// on screen with no way to dismiss it.
+ipcMain.handle('warden:hide', async () => {
   closeWarden();
   try { await minimizeActiveWindow(); } catch { /* ignore */ }
   if (lastPrimaryWindow) {
@@ -856,8 +876,8 @@ async function restoreWorkspace(label) {
   return { text: `${appText}${goalText}` };
 }
 
-ipcMain.handle('buddy:runAction', async (event, actionId) => {
-  requireAppWindow(event);
+// Called from the widget/panel (panel.js), not appWin — no requireAppWindow().
+ipcMain.handle('buddy:runAction', async (_event, actionId) => {
   if (actionId === 'restore-workspace:yesterday') return restoreWorkspace('yesterday');
   return { text: "I don't know how to run that action yet." };
 });
