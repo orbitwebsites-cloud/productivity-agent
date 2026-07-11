@@ -11,12 +11,11 @@ name: Build beta installers
 #     safe to run as often as you want without surprising anyone who already has
 #     the app installed.
 #   - Push a version tag (v*, e.g. `git tag v0.1.2 && git push origin v0.1.2`):
-#     builds AND publishes the installer + electron-updater manifest to Vercel Blob
+#     builds AND publishes the installer + electron-updater manifest to Cloudflare R2
 #     storage (scripts/publish-release.js), which is what existing installs actually
 #     check against (electron/updater.js, every 4h). This is the "ship it for real"
-#     trigger. Needs the BLOB_READ_WRITE_TOKEN repo secret set (Vercel dashboard ->
-#     Storage -> your blob store -> read-write token -> GitHub repo Settings ->
-#     Secrets and variables -> Actions).
+#     trigger. Needs R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET,
+#     and R2_PUBLIC_BASE_URL repo secrets set in GitHub Actions.
 
 on:
   workflow_dispatch: {}
@@ -46,7 +45,11 @@ jobs:
       - if: startsWith(github.ref, 'refs/tags/v')
         run: node scripts/publish-release.js
         env:
-          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
 
   build-win:
     runs-on: windows-latest
@@ -65,4 +68,8 @@ jobs:
       - if: startsWith(github.ref, 'refs/tags/v')
         run: node scripts/publish-release.js
         env:
-          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
