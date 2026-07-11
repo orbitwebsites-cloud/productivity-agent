@@ -14,6 +14,12 @@ const DEFAULTS = {
   // Master switch — tracking can be paused without quitting.
   trackingEnabled: true,
 
+  // 'light' (Daylight rolling hills) or 'dark' (Midnight aurora) — chosen once
+  // during onboarding (see onboarding.themeChosen below), changeable later in
+  // Settings. Read at BrowserWindow creation (see main.js's showApp) to avoid
+  // a flash-of-wrong-theme on launch, and live-switchable after that.
+  theme: 'light',
+
   setup: {
     status: 'pending',
     lastError: '',
@@ -25,7 +31,11 @@ const DEFAULTS = {
   // an account (email/password or Google). Free features work with or without one —
   // this is about surfacing account creation early, not gating anything on it.
   onboarding: {
-    accountPromptDone: false
+    accountPromptDone: false,
+    // Shown once, before anything else: pick Daylight or Midnight so the user
+    // never has to live with a default they didn't choose. Set true by the
+    // first buddy:setTheme call, from onboarding or a later Settings change.
+    themeChosen: false
   },
 
   // The user's "Life Pursuits" — what THEY define as their work/goals.

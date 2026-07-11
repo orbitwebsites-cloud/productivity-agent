@@ -10,6 +10,7 @@ let lastSetupError = '';
 
 // ---------- first-run setup ----------
 const setupGate = document.getElementById('setupGate');
+const setupTheme = document.getElementById('setupTheme');
 const setupWelcome = document.getElementById('setupWelcome');
 const setupSad = document.getElementById('setupSad');
 const setupAccount = document.getElementById('setupAccount');
@@ -70,14 +71,18 @@ async function finishProgress() {
 function applySetupState(cfg) {
   const status = cfg.setup?.status || 'pending';
   const setupDone = status === 'ready';
+  // Shown once, before anything else, so the user never lives with a default
+  // theme they didn't pick. Takes priority over every other onboarding step.
+  const needsThemePrompt = !cfg.onboarding?.themeChosen;
   const needsAccountPrompt = setupDone && !cfg.onboarding?.accountPromptDone;
-  setupReady = setupDone && !needsAccountPrompt;
+  setupReady = setupDone && !needsAccountPrompt && !needsThemePrompt;
 
   setupGate.hidden = setupReady;
   shell.hidden = !setupReady;
-  setupAccount.hidden = !needsAccountPrompt;
-  setupWelcome.hidden = needsAccountPrompt || status === 'declined';
-  setupSad.hidden = status !== 'declined';
+  setupTheme.hidden = !needsThemePrompt;
+  setupAccount.hidden = needsThemePrompt || !needsAccountPrompt;
+  setupWelcome.hidden = needsThemePrompt || needsAccountPrompt || status === 'declined';
+  setupSad.hidden = needsThemePrompt || status !== 'declined';
   const msg = document.getElementById('setupMsg');
   if (status === 'failed' && cfg.setup?.lastError) {
     lastSetupError = cfg.setup.lastError;
@@ -96,6 +101,7 @@ function applySetupState(cfg) {
 async function refreshSetup() {
   const cfg = await window.buddy.getConfig();
   applySetupState(cfg);
+  updateThemeToggleLabel(cfg.theme);
   if (setupReady) {
     await loadPursuits();
   }
@@ -137,6 +143,25 @@ openHelpBtn.addEventListener('click', () => window.buddy.openSetupHelp(lastSetup
 document.getElementById('retrySetup').addEventListener('click', async () => {
   setupWelcome.hidden = false;
   setupSad.hidden = true;
+});
+
+// ---------- onboarding: theme picker (first screen) ----------
+async function chooseTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const cfg = await window.buddy.setTheme(theme);
+  updateThemeToggleLabel(cfg.theme);
+  applySetupState(cfg);
+}
+document.getElementById('pickThemeLight').addEventListener('click', () => chooseTheme('light'));
+document.getElementById('pickThemeDark').addEventListener('click', () => chooseTheme('dark'));
+
+// ---------- Settings: change theme later ----------
+function updateThemeToggleLabel(theme) {
+  document.getElementById('themeToggleLabel').textContent = theme === 'dark' ? 'Midnight' : 'Daylight';
+}
+document.getElementById('themeToggle').addEventListener('click', async () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  await chooseTheme(next);
 });
 
 // ---------- onboarding: skippable account prompt (after setup finishes) ----------

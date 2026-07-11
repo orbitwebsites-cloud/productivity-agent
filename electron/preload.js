@@ -2,6 +2,18 @@
 
 const { contextBridge, ipcRenderer } = require('electron');
 
+// Set <html data-theme> before the page's own CSS/JS run, from the theme
+// main.js passed in via webPreferences.additionalArguments (see showApp) --
+// avoids a flash of the other theme's background on launch. Preload runs
+// early enough that document.documentElement already exists but nothing has
+// painted yet. A later live change (theme picker/switch) just re-sets this
+// same attribute directly from app.js; no reload needed either way.
+const themeArg = process.argv.find((a) => a.startsWith('--sb-theme='));
+if (themeArg) {
+  const theme = themeArg.slice('--sb-theme='.length) === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+}
+
 // Bridge for BOTH windows (orb + panel). Each window loads this preload;
 // exposing all methods to both is harmless.
 contextBridge.exposeInMainWorld('buddy', {
@@ -22,6 +34,7 @@ contextBridge.exposeInMainWorld('buddy', {
   installSetup: () => ipcRenderer.invoke('buddy:installSetup'),
   declineSetup: () => ipcRenderer.invoke('buddy:declineSetup'),
   completeOnboarding: () => ipcRenderer.invoke('buddy:completeOnboarding'),
+  setTheme: (theme) => ipcRenderer.invoke('buddy:setTheme', theme),
   openSetupHelp: (errorText) => ipcRenderer.invoke('buddy:openSetupHelp', errorText),
   recentApps: () => ipcRenderer.invoke('buddy:recentApps'),
   scanApps: () => ipcRenderer.invoke('buddy:scanApps'),

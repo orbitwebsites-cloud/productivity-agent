@@ -10,6 +10,26 @@
   <canvas id="bgCanvas" class="bg-canvas" aria-hidden="true"></canvas>
   <div id="bgGrain" class="bg-grain" aria-hidden="true"></div>
   <section id="setupGate" class="setup-gate" hidden>
+    <div id="setupTheme" class="setup-panel theme-panel" hidden>
+      <div class="setup-copy" style="max-width:100%;">
+        <p class="eyebrow">Before we start</p>
+        <h1>Daylight or Midnight?</h1>
+        <p class="lead">Pick the look for Pesto. You can change this anytime in Settings.</p>
+        <div class="theme-pick-grid">
+          <button type="button" class="theme-card" id="pickThemeLight" data-theme-choice="light">
+            <span class="theme-swatch theme-swatch-light" aria-hidden="true"></span>
+            <span class="theme-card-label">Daylight</span>
+            <span class="theme-card-desc">Warm, sunlit hills</span>
+          </button>
+          <button type="button" class="theme-card" id="pickThemeDark" data-theme-choice="dark">
+            <span class="theme-swatch theme-swatch-dark" aria-hidden="true"></span>
+            <span class="theme-card-label">Midnight</span>
+            <span class="theme-card-desc">Aurora over a night sky</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div id="setupWelcome" class="setup-panel">
       <img class="setup-mascot" src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" />
       <div class="setup-copy">
@@ -99,7 +119,9 @@
         <button class="navitem" data-page="jarvis">Jarvis Mode</button>
         <button class="navitem" data-page="premium">Premium ✨</button>
       </nav>
-      <button id="visitSite" class="ghostbtn" style="margin-top:auto">🌐 Visit our website</button>
+      <button id="themeToggle" class="theme-toggle" style="margin-top:auto" type="button"
+        aria-label="Switch between Daylight and Midnight theme">🌓 <span id="themeToggleLabel">Daylight</span></button>
+      <button id="visitSite" class="ghostbtn">🌐 Visit our website</button>
     </aside>
 
     <main class="main">

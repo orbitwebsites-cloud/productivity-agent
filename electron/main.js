@@ -104,12 +104,22 @@ function togglePanel() {
 // The full desktop app window: normal chrome, resizable, scrollable.
 function showApp() {
   if (appWin) { appWin.show(); appWin.focus(); return; }
+  const theme = loadConfig().theme === 'dark' ? 'dark' : 'light';
   appWin = new BrowserWindow({
     width: 880, height: 620, minWidth: 680, minHeight: 480,
     title: 'ScreenBuddy',
-    backgroundColor: '#faf7f2',
+    // Matches each theme's canvas fallback (renderer/app.css's --body-bg) so
+    // there's no flash of the wrong color before the page paints.
+    backgroundColor: theme === 'dark' ? '#0a0e18' : '#faf7f2',
     icon: IDLE_PNG,
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      // Read by preload.js at document-start to set <html data-theme> before
+      // first paint -- avoids a flash of the other theme on launch.
+      additionalArguments: [`--sb-theme=${theme}`]
+    }
   });
   appWin.setMenuBarVisibility(false);
   appWin.loadFile(path.join(__dirname, '..', 'renderer', 'app.html'));
@@ -515,6 +525,13 @@ ipcMain.handle('buddy:declineSetup', (event) => {
 ipcMain.handle('buddy:completeOnboarding', (event) => {
   requireAppWindow(event);
   return saveConfig({ onboarding: { accountPromptDone: true } });
+});
+// Theme picker (onboarding's first screen, or a later change from Settings).
+// Marks onboarding.themeChosen so the picker never blocks the shell again.
+ipcMain.handle('buddy:setTheme', (event, theme) => {
+  requireAppWindow(event);
+  const value = theme === 'dark' ? 'dark' : 'light';
+  return saveConfig({ theme: value, onboarding: { themeChosen: true } });
 });
 ipcMain.handle('buddy:openSetupHelp', async (event, errorText) => {
   requireAppWindow(event);
