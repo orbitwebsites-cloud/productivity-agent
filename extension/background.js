@@ -44,12 +44,27 @@ function reply(requestId, extra) {
   socket.send(JSON.stringify({ requestId, ...extra }));
 }
 
+// Browser-internal pages (new tab, settings, chrome-extension://, ...) can
+// never receive a content script — the browser blocks it outright, no
+// manifest permission fixes it. Catching this up front turns a cryptic
+// "Could not establish connection" into an actionable message.
+function isUnsupportedTabUrl(url) {
+  return !url || !/^https?:\/\//i.test(url);
+}
+
 // Snapshot/act round trip for the browser-task agent (electron/browser-agent.js).
 // content.js does the real work (element discovery + the click/type/navigate
 // denylist) — this just relays to whichever tab is active and returns the result.
 async function handleAgentRequest(msg) {
   const tab = await activeTab();
   if (!tab) { reply(msg.requestId, { error: 'No active browser tab.' }); return; }
+  if (isUnsupportedTabUrl(tab.url)) {
+    reply(msg.requestId, {
+      error: `The active tab (${tab.url || 'unknown'}) is a browser page Pesto can't read. ` +
+        'Switch to a regular website tab (a normal https:// page) and try again.'
+    });
+    return;
+  }
   try {
     if (msg.type === 'snapshot') {
       const result = await api.tabs.sendMessage(tab.id, { type: 'agentSnapshot' });
@@ -58,8 +73,15 @@ async function handleAgentRequest(msg) {
       const result = await api.tabs.sendMessage(tab.id, { type: 'agentAct', action: msg.action });
       reply(msg.requestId, result);
     }
-  } catch (err) {
-    reply(msg.requestId, { error: String(err && err.message || err) });
+  } catch {
+    // Most common real-world cause: the tab was already open before the
+    // extension was loaded, so it never got the content script injected —
+    // browsers don't do that retroactively. A reload of the tab fixes it.
+    reply(msg.requestId, {
+      error: "Could not reach this tab's page. If you just loaded or reloaded the extension, " +
+        'refresh this browser tab once (content scripts only inject into tabs opened after ' +
+        'the extension loads) and try again.'
+    });
   }
 }
 
