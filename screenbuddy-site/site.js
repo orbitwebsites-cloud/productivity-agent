@@ -1,10 +1,10 @@
 'use strict';
 
-const RELEASES = 'https://bglwicwloz5njbgs.public.blob.vercel-storage.com/releases/';
+const RELEASES = 'https://downloads.screenbudy.orbitboyzz.me/releases/';
 const downloads = {
-  win32: `${RELEASES}ScreenBuddy-Setup-0.1.2.exe`,
-  macArm64: `${RELEASES}ScreenBuddy-0.1.2-arm64.dmg`,
-  macX64: `${RELEASES}ScreenBuddy-0.1.2-x64.dmg`
+  win32: `${RELEASES}ScreenBuddy-Setup-0.1.4.exe`,
+  macArm64: `${RELEASES}ScreenBuddy-0.1.4-arm64.dmg`,
+  macX64: `${RELEASES}ScreenBuddy-0.1.4-x64.dmg`
 };
 
 // Most Macs sold since late 2020 are Apple Silicon (arm64) — default to that build
