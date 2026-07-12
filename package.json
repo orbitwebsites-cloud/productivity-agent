@@ -25,19 +25,13 @@
     "files": [
       "electron/**/*",
       "renderer/**/*",
-      "assets/**/*",
-      "node_modules/.cache/puppeteer/**/*"
+      "assets/**/*"
     ],
     "extraResources": [
       {
         "from": "extension",
         "to": "extension"
       }
-    ],
-    "asarUnpack": [
-      "node_modules/.cache/puppeteer/**/*",
-      "node_modules/puppeteer/**/*",
-      "node_modules/puppeteer-core/**/*"
     ],
     "mac": {
       "category": "public.app-category.productivity",
@@ -82,10 +76,10 @@
     }
   },
   "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.23",
     "electron-updater": "^6.8.9",
     "koffi": "^3.1.0",
     "qrcode": "^1.5.4",
-    "whatsapp-web.js": "^1.26.0",
     "ws": "^8.18.0"
   },
   "allowScripts": {

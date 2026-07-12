@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const { spawn } = require('child_process');
 
 // Jarvis WhatsApp remote-agent — OPT-IN, off by default (see config.js `jarvisWhatsapp`).
@@ -9,19 +10,22 @@ const { spawn } = require('child_process');
 // reused from the exact same brain the desktop chat panel uses), plus a couple of
 // explicit dev-ops commands.
 //
-// Uses `whatsapp-web.js`, an unofficial client that drives a real WhatsApp Web session
-// (QR-paired, session persisted locally) — NOT the official WhatsApp Business API. That
-// tradeoff is deliberate (zero per-message cost, no Meta account needed) but it means:
+// Uses `@whiskeysockets/baileys`, an unofficial client that speaks the WhatsApp Web
+// multi-device protocol directly over a WebSocket (QR-paired, session persisted
+// locally) — NOT the official WhatsApp Business API, and NOT whatsapp-web.js (which
+// drives this the same way but through a bundled headless Chromium via Puppeteer;
+// Baileys needs no browser at all, which matters here since this is an Electron app
+// already shipping one Chromium — a second one just for messaging was pure bloat).
+// That protocol-level tradeoff is deliberate (zero per-message cost, no Meta account
+// needed) but it means:
 //   - It's against WhatsApp's Terms of Service to automate a personal account this way.
 //     Meta can ban the linked number for automated behavior. That's the user's own
 //     account and their call to make — the Settings UI must disclose this before pairing,
 //     never hide it.
-//   - Trust boundary: we only ever act on messages where `message.fromMe` is true — sent
+//   - Trust boundary: we only ever act on messages where the key is `fromMe` — sent
 //     from a device already logged into the *same* WhatsApp account (the phone that
-//     scanned the pairing QR). We listen on the `message` event, not `message_create`,
-//     specifically because `message_create` also fires for replies *we* send, which would
-//     make the bot re-process its own replies as new commands. Never react to messages
-//     from other contacts, and don't loosen the fromMe check without a real reason.
+//     scanned the pairing QR). Never react to messages from other contacts, and don't
+//     loosen the fromMe check without a real reason.
 //
 // Explicitly NOT built here, on purpose, not just missing:
 //   - Auto-completing courses/quizzes/certifications to fraudulently claim credentials.
@@ -30,22 +34,23 @@ const { spawn } = require('child_process');
 //     (git push to a project directory they set up) — never "fill out this link with my
 //     info" on request.
 
-let client = null;
+let sock = null;
 let ready = false;
 let lastQr = '';
-let selfChatId = '';
+let selfJid = '';
 let askFn = null;
 let fillActiveTabFn = null;
 let browserTaskFn = null;
 let projectDir = '';
 let notifyFn = null;
+let stopping = false;
 
 function isEnabled(config) {
   return !!(config && config.jarvisWhatsapp && config.jarvisWhatsapp.enabled);
 }
 
 function status() {
-  return { running: !!client, ready, hasQr: !!lastQr };
+  return { running: !!sock, ready, hasQr: !!lastQr };
 }
 
 async function qrToDataUrl(qr) {
@@ -57,16 +62,31 @@ async function qrToDataUrl(qr) {
   }
 }
 
-async function start(config, { ask, fillActiveTab, browserTask, notify } = {}) {
-  if (client) return status();
+// Baileys logs through a pino-shaped logger; we don't want its (very chatty)
+// default output, and don't need a real pino dependency just for that — a
+// silent shim with the methods Baileys actually calls is enough.
+function silentLogger() {
+  const noop = () => {};
+  const logger = { trace: noop, debug: noop, info: noop, warn: noop, error: noop, fatal: noop };
+  logger.child = () => logger;
+  return logger;
+}
 
-  let Client, LocalAuth;
+function authDir() {
+  const { app } = require('electron');
+  return path.join(app.getPath('userData'), 'jarvis-whatsapp-auth');
+}
+
+async function start(config, { ask, fillActiveTab, browserTask, notify } = {}) {
+  if (sock) return status();
+
+  let makeWASocket, useMultiFileAuthState, DisconnectReason, jidNormalizedUser;
   try {
-    ({ Client, LocalAuth } = require('whatsapp-web.js'));
+    ({ default: makeWASocket, useMultiFileAuthState, DisconnectReason, jidNormalizedUser } = require('@whiskeysockets/baileys'));
   } catch {
     throw new Error(
-      "whatsapp-web.js isn't installed in this build. Run `npm install` after pulling the " +
-      'jarvis-whatsapp changes, or ask a builder to add it before shipping this feature.'
+      "@whiskeysockets/baileys isn't installed in this build. Run `npm install` after pulling " +
+      'the jarvis-whatsapp changes, or ask a builder to add it before shipping this feature.'
     );
   }
 
@@ -75,65 +95,88 @@ async function start(config, { ask, fillActiveTab, browserTask, notify } = {}) {
   browserTaskFn = typeof browserTask === 'function' ? browserTask : null;
   notifyFn = typeof notify === 'function' ? notify : null;
   projectDir = config?.jarvisWhatsapp?.projectDir || '';
+  stopping = false;
 
-  client = new Client({
-    authStrategy: new LocalAuth({ clientId: 'screenbuddy-jarvis' }),
-    puppeteer: { headless: true }
-  });
+  const { state, saveCreds } = await useMultiFileAuthState(authDir());
 
-  client.on('qr', async (qr) => {
-    ready = false;
-    const dataUrl = await qrToDataUrl(qr);
-    lastQr = dataUrl || qr;
-    notifyFn && notifyFn({ type: 'qr', dataUrl, raw: qr });
-  });
+  sock = makeWASocket({ auth: state, logger: silentLogger() });
 
-  client.on('ready', () => {
-    ready = true;
-    lastQr = '';
-    selfChatId = client.info?.wid?._serialized || '';
-    notifyFn && notifyFn({ type: 'ready' });
-  });
+  sock.ev.on('creds.update', saveCreds);
 
-  client.on('disconnected', (reason) => {
-    ready = false;
-    notifyFn && notifyFn({ type: 'disconnected', reason: String(reason || '') });
-  });
+  sock.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update;
 
-  client.on('auth_failure', (msg) => {
-    notifyFn && notifyFn({ type: 'error', message: String(msg || 'Authentication failed.') });
-  });
+    if (qr) {
+      ready = false;
+      const dataUrl = await qrToDataUrl(qr);
+      lastQr = dataUrl || qr;
+      notifyFn && notifyFn({ type: 'qr', dataUrl, raw: qr });
+    }
 
-  // Deliberately `message`, not `message_create` — see header comment.
-  client.on('message', async (message) => {
-    if (!message.fromMe) return;
-    // Scoped to your own self-chat ("Message yourself" / Note to Self) only.
-    // fromMe alone doesn't say WHICH chat the message was sent in — without
-    // this, texting a command to a real contact or group would have Pesto
-    // reply in that thread, visibly leaking your tracked activity to them.
-    if (selfChatId && message.to !== selfChatId) return;
-    try {
-      const reply = await route(message.body);
-      if (reply) await message.reply(reply);
-    } catch (err) {
-      try {
-        await message.reply(`Jarvis hit an error: ${String(err && err.message || err).slice(0, 300)}`);
-      } catch { /* best effort — don't let a reply failure crash the listener */ }
+    if (connection === 'open') {
+      ready = true;
+      lastQr = '';
+      selfJid = sock.user?.id ? jidNormalizedUser(sock.user.id) : '';
+      notifyFn && notifyFn({ type: 'ready' });
+    }
+
+    if (connection === 'close') {
+      ready = false;
+      const statusCode = lastDisconnect?.error?.output?.statusCode;
+      const loggedOut = statusCode === DisconnectReason.loggedOut;
+      const wasSock = sock;
+      sock = null;
+      if (loggedOut || stopping) {
+        notifyFn && notifyFn({ type: 'disconnected', reason: loggedOut ? 'logged out' : 'stopped' });
+      } else {
+        // Any other close (network blip, restart) — Baileys expects the caller
+        // to reconnect; the auth state on disk survives so this is silent.
+        notifyFn && notifyFn({ type: 'disconnected', reason: 'reconnecting' });
+        const cfg = { jarvisWhatsapp: { projectDir } };
+        start(cfg, { ask: askFn, fillActiveTab: fillActiveTabFn, browserTask: browserTaskFn, notify: notifyFn }).catch(() => {});
+      }
+      void wasSock;
     }
   });
 
-  await client.initialize();
+  sock.ev.on('messages.upsert', async ({ messages, type }) => {
+    if (type !== 'notify') return;
+    for (const message of messages) {
+      if (!message.key?.fromMe) continue;
+      // Scoped to your own self-chat ("Message yourself" / Note to Self) only.
+      // fromMe alone doesn't say WHICH chat the message was sent in — without
+      // this, texting a command to a real contact or group would have Pesto
+      // reply in that thread, visibly leaking your tracked activity to them.
+      if (selfJid && message.key.remoteJid !== selfJid) continue;
+      const text = message.message?.conversation
+        || message.message?.extendedTextMessage?.text
+        || '';
+      if (!text) continue;
+      try {
+        const reply = await route(text);
+        if (reply) await sock.sendMessage(message.key.remoteJid, { text: reply });
+      } catch (err) {
+        try {
+          await sock.sendMessage(message.key.remoteJid, {
+            text: `Jarvis hit an error: ${String(err && err.message || err).slice(0, 300)}`
+          });
+        } catch { /* best effort — don't let a reply failure crash the listener */ }
+      }
+    }
+  });
+
   return status();
 }
 
 async function stop() {
-  const c = client;
-  client = null;
+  stopping = true;
+  const s = sock;
+  sock = null;
   ready = false;
   lastQr = '';
-  selfChatId = '';
-  if (c) {
-    try { await c.destroy(); } catch { /* best effort */ }
+  selfJid = '';
+  if (s) {
+    try { s.end(undefined); } catch { /* best effort */ }
   }
 }
 
