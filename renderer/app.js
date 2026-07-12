@@ -233,10 +233,10 @@ function pursuitRow(p) {
   const nameVal = (p.emoji ? p.emoji + ' ' : '') + (p.name || '');
   row.innerHTML = `
     <div class="top">
-      <input class="name" value="${escapeHtml(nameVal)}" placeholder="Pursuit name (e.g. 🍳 Learn to Cook)" />
-      <button class="del" title="Remove">🗑</button>
+      <input class="name" value="${escapeHtml(nameVal)}" placeholder="Pursuit name (e.g. 🍳 Learn to Cook)" aria-label="Pursuit name" />
+      <button class="del" title="Remove" aria-label="Remove pursuit">🗑</button>
     </div>
-    <input class="kw" value="${escapeHtml((p.keywords || []).join(', '))}" placeholder="keywords, comma separated (e.g. code, github, claude)" />`;
+    <input class="kw" value="${escapeHtml((p.keywords || []).join(', '))}" placeholder="keywords, comma separated (e.g. code, github, claude)" aria-label="Keywords" />`;
   row.querySelector('.del').addEventListener('click', () => row.remove());
   const kw = row.querySelector('.kw');
   kw.addEventListener('focus', () => { lastKwField = kw; });
