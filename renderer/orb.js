@@ -45,12 +45,12 @@ if (window.buddy.onOrbSize) {
 }
 
 // ---- idle personality tics: every so often, play a little fidget instead
-// of just bobbing forever. Inspired by desktop-pet apps, kept subtle. ----
+// of just bobbing forever. Inspired by desktop-pet apps, kept subtle. Only
+// while genuinely idle — suppressed for every other mood below. ----
 const TICS = ['tic-tilt-left', 'tic-tilt-right', 'tic-hop'];
-let celebrating = false;
 
 function playTic() {
-  if (celebrating || dragging) return;
+  if (restMood() !== 'idle' || flashTimer || dragging) return;
   const cls = TICS[Math.floor(Math.random() * TICS.length)];
   mascot.classList.add(cls);
   mascot.addEventListener('animationend', function done() {
@@ -65,9 +65,42 @@ function scheduleTic() {
 }
 scheduleTic();
 
-// ---- celebration: swap in the celebrating mascot for a few seconds on a
-// real win (Warden successfully avoided, a new day-streak), pushed from
-// main.js. Never triggered from inside the renderer itself. ----
+// ---- mood engine ----
+// Three layers, low to high priority:
+//   1. ambient  — 'idle' or 'sleepy' (chill mode / tracking paused). Persists.
+//   2. hold     — 'alert' (Warden countdown open) or 'thinking' (awaiting an
+//                 AI answer). Persists until explicitly cleared, then falls
+//                 back to ambient.
+//   3. flash    — 'celebrate' | 'nudge' | 'drill' | 'angry'. Shows for a few
+//                 seconds then falls back to whatever hold/ambient was
+//                 underneath it. 'celebrate' also gets a sparkle burst.
+// All driven from main.js via the single 'orb:mood' push — nothing here
+// decides to change mood on its own.
+
+const MASCOT_SRC = {
+  idle: '../assets/pesto/screenbuddy_mascot_idle.png',
+  sleepy: '../assets/pesto/screenbuddy_mascot_sleepy.png',
+  alert: '../assets/pesto/screenbuddy_mascot_alert.png',
+  thinking: '../assets/pesto/screenbuddy_mascot_thinking.png',
+  celebrate: '../assets/pesto/screenbuddy_mascot_celebrating.png',
+  nudge: '../assets/pesto/screenbuddy_mascot_nudge.png',
+  drill: '../assets/pesto/screenbuddy_mascot_drill.png',
+  angry: '../assets/pesto/screenbuddy_mascot_angry.png'
+};
+const FLASH_CLASS = { celebrate: 'celebrating', nudge: 'flash-soft', drill: 'flash-firm', angry: 'flash-firm' };
+const FLASH_MS = 2600;
+
+let ambientMood = 'idle'; // 'idle' | 'sleepy'
+let heldMood = null;      // 'alert' | 'thinking' | null
+let flashTimer = null;
+let sparkleTimer = null;
+
+function restMood() { return heldMood || ambientMood; }
+
+function render(mood) {
+  mascot.src = MASCOT_SRC[mood] || MASCOT_SRC.idle;
+}
+
 function spawnSparkle() {
   const s = document.createElement('div');
   s.className = 'sparkle';
@@ -79,21 +112,45 @@ function spawnSparkle() {
   setTimeout(() => s.remove(), 1200);
 }
 
-function celebrate() {
-  if (celebrating) return;
-  celebrating = true;
+function endFlash(prevClass) {
+  clearTimeout(flashTimer);
+  flashTimer = null;
+  if (sparkleTimer) { clearInterval(sparkleTimer); sparkleTimer = null; }
+  if (prevClass) mascot.classList.remove(prevClass);
+  render(restMood());
+}
+
+function setAmbient(mood) {
+  ambientMood = mood === 'sleepy' ? 'sleepy' : 'idle';
+  if (!flashTimer) render(restMood());
+}
+
+function setHold(mood) {
+  // mood is 'alert' | 'thinking' | null (null clears the hold)
+  heldMood = mood === 'alert' || mood === 'thinking' ? mood : null;
+  if (!flashTimer) render(restMood());
+}
+
+function flash(mood) {
+  if (!MASCOT_SRC[mood]) return;
+  const prevClass = FLASH_CLASS[flash.activeClass];
+  if (flashTimer) endFlash(prevClass);
   mascot.classList.remove(...TICS);
-  mascot.src = '../assets/pesto/screenbuddy_mascot_celebrating.png';
-  mascot.classList.add('celebrating');
-  const sparkleTimer = setInterval(spawnSparkle, 220);
-  setTimeout(() => {
-    clearInterval(sparkleTimer);
-    mascot.classList.remove('celebrating');
-    mascot.src = '../assets/pesto/screenbuddy_mascot_idle.png';
-    celebrating = false;
-  }, 2600);
+  render(mood);
+  const cls = FLASH_CLASS[mood];
+  if (cls) mascot.classList.add(cls);
+  flash.activeClass = mood;
+  if (mood === 'celebrate') sparkleTimer = setInterval(spawnSparkle, 220);
+  flashTimer = setTimeout(() => endFlash(cls), FLASH_MS);
 }
 
 if (window.buddy.onOrbMood) {
-  window.buddy.onOrbMood((mood) => { if (mood === 'celebrate') celebrate(); });
+  window.buddy.onOrbMood((msg) => {
+    // Back-compat: earlier builds only ever sent the bare string 'celebrate'.
+    const payload = typeof msg === 'string' ? { kind: 'flash', mood: msg } : (msg || {});
+    if (payload.kind === 'ambient') setAmbient(payload.mood);
+    else if (payload.kind === 'hold') setHold(payload.mood);
+    else if (payload.kind === 'holdEnd') setHold(null);
+    else if (payload.kind === 'flash') flash(payload.mood);
+  });
 }

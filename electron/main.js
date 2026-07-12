@@ -164,7 +164,17 @@ const MODES = [
 
 const LIMITS = [5, 10, 15, 30, 60];
 
-function setMode(id) { saveConfig({ mode: id }); accountability.reset(); refreshTray(); }
+// Pesto's ambient face: sleepy while chill mode/tracking-paused (nothing being
+// enforced), idle otherwise. Momentary flashes/holds (nudge, drill, alert,
+// thinking, celebrate) layer on top of this in orb.js and fall back to it.
+function syncOrbMood() {
+  if (!orb) return;
+  const cfg = loadConfig();
+  const sleepy = cfg.mode === 'chill' || !cfg.trackingEnabled;
+  orb.webContents.send('orb:mood', { kind: 'ambient', mood: sleepy ? 'sleepy' : 'idle' });
+}
+
+function setMode(id) { saveConfig({ mode: id }); accountability.reset(); refreshTray(); syncOrbMood(); }
 function setLimit(min) {
   const cur = loadConfig();
   saveConfig({ accountability: { ...(cur.accountability || {}), distractionLimitMin: min } });
@@ -192,7 +202,7 @@ function trayMenu() {
         label: `${n} minutes`, type: 'radio', checked: curLimit === n, click: () => setLimit(n)
       }))
     },
-    { label: 'Pause / resume tracking', click: () => saveConfig({ trackingEnabled: !loadConfig().trackingEnabled }) },
+    { label: 'Pause / resume tracking', click: () => { saveConfig({ trackingEnabled: !loadConfig().trackingEnabled }); syncOrbMood(); } },
     { type: 'separator' },
     { label: 'Visit our website', click: () => shell.openExternal('https://screenbudy.orbitboyzz.me/') },
     { type: 'separator' },
@@ -259,6 +269,7 @@ function showWarden(appName, context = {}) {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
   });
   wardenWin.setAlwaysOnTop(true, 'screen-saver');
+  const locked = accountability.isWardenLocked(currentWardenApp);
   const q = new URLSearchParams({
     app: currentWardenApp,
     secs: String(secs),
@@ -266,12 +277,22 @@ function showWarden(appName, context = {}) {
     reason: context.reason || 'distraction',
     category: context.category || '',
     currentPursuit: context.currentPursuit || '',
-    locked: accountability.isWardenLocked(currentWardenApp) ? '1' : ''
+    locked: locked ? '1' : ''
   }).toString();
   wardenWin.loadFile(path.join(__dirname, '..', 'renderer', 'warden.html'), { search: `?${q}` });
   wardenWin.on('closed', () => { wardenWin = null; currentWardenApp = null; });
+  if (orb) {
+    // Locked (repeat cancel-abuse) gets a sharp angry flash instead of the
+    // ordinary alert hold — it's a reaction to being pushed too far, not a
+    // face Pesto should sit in for the whole countdown.
+    if (locked) orb.webContents.send('orb:mood', { kind: 'flash', mood: 'angry' });
+    else orb.webContents.send('orb:mood', { kind: 'hold', mood: 'alert' });
+  }
 }
-function closeWarden() { if (wardenWin) { wardenWin.close(); wardenWin = null; currentWardenApp = null; } }
+function closeWarden() {
+  if (wardenWin) { wardenWin.close(); wardenWin = null; currentWardenApp = null; }
+  if (orb) orb.webContents.send('orb:mood', { kind: 'holdEnd' });
+}
 
 function jarvisActivePursuit(config) {
   const j = config.jarvis || {};
@@ -306,7 +327,7 @@ function checkStreakCelebration() {
   try {
     const days = answers.currentStreakDays();
     if (lastKnownStreakDays >= 0 && days > lastKnownStreakDays && orb) {
-      orb.webContents.send('orb:mood', 'celebrate');
+      orb.webContents.send('orb:mood', { kind: 'flash', mood: 'celebrate' });
     }
     lastKnownStreakDays = days;
   } catch { /* best-effort */ }
@@ -316,9 +337,10 @@ function startBuddyRuntime() {
   if (buddyStarted) return;
   createOrb();
   createPanel();
+  syncOrbMood();
   accountability.configure({
-    onNudge: (msg) => notify('Pesto', msg),
-    onDrill: (msg) => notify('Pesto', msg),
+    onNudge: (msg) => { notify('Pesto', msg); if (orb) orb.webContents.send('orb:mood', { kind: 'flash', mood: 'nudge' }); },
+    onDrill: (msg) => { notify('Pesto', msg); if (orb) orb.webContents.send('orb:mood', { kind: 'flash', mood: 'drill' }); },
     onWarden: (appName, context) => showWarden(appName, context)
   });
   blocker.configure(minimizeActiveWindow);
@@ -504,7 +526,14 @@ function extensionDir() {
 }
 
 // ---- panel IPC ----
-ipcMain.handle('buddy:ask', (_e, question) => buddyAsk(question));
+ipcMain.handle('buddy:ask', async (_e, question) => {
+  if (orb) orb.webContents.send('orb:mood', { kind: 'hold', mood: 'thinking' });
+  try {
+    return await buddyAsk(question);
+  } finally {
+    if (orb) orb.webContents.send('orb:mood', { kind: 'holdEnd' });
+  }
+});
 ipcMain.handle('buddy:today', () => {
   const start = answers.startOfDay(Date.now());
   const s = answers.summarize(start, Date.now());
@@ -765,7 +794,7 @@ ipcMain.handle('warden:hide', async () => {
     await new Promise((resolve) => setTimeout(resolve, 180));
     try { await activateWindow(lastPrimaryWindow); } catch { /* best-effort */ }
   }
-  if (orb) orb.webContents.send('orb:mood', 'celebrate'); // real win — reward it
+  if (orb) orb.webContents.send('orb:mood', { kind: 'flash', mood: 'celebrate' }); // real win — reward it
   return { ok: true };
 });
 ipcMain.handle('warden:cancel', () => {
@@ -786,6 +815,7 @@ ipcMain.handle('buddy:setMode', (event, mode) => {
   const cfg = saveConfig({ mode: id });
   accountability.reset();
   refreshTray();
+  syncOrbMood();
   return cfg;
 });
 ipcMain.handle('buddy:saveAccountability', (event, settings) => {
@@ -798,6 +828,7 @@ ipcMain.handle('buddy:saveAccountability', (event, settings) => {
   });
   accountability.reset();
   refreshTray();
+  syncOrbMood();
   return cfg;
 });
 
