@@ -26,16 +26,32 @@ That inbox must confirm FormSubmit once before messages are delivered.
 
 ## Download Link
 
-The home page currently points to a static download path:
+`site.js` fetches `latest.yml` from the R2 releases bucket at page load and reads
+its `version:` field -- the same manifest `scripts/publish-release.js` uploads on
+every tagged release build (see `.github/workflows/build-beta.yml`) -- and builds
+the Windows/Mac download URLs from that version. **The site never needs a manual
+version bump**; it always links to whatever was actually published last.
 
-```text
-/downloads/ScreenBuddy-0.1.0-beta-win-x64.exe
+`FALLBACK_VERSION` in `site.js` is only used if that fetch fails (network hiccup,
+feed down, or R2 CORS not yet configured -- see below); update it occasionally as
+a safety net, not as the primary way version info reaches the site.
+
+### One-time setup: R2 CORS
+
+The fetch is cross-origin (site domain -> `downloads.screenbudy.orbitboyzz.me`),
+so the R2 bucket needs a CORS policy allowing GET from the site's origin, e.g. in
+the Cloudflare dashboard (R2 -> bucket -> Settings -> CORS Policy):
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://screenbudy.orbitboyzz.me"],
+    "AllowedMethods": ["GET"],
+    "AllowedHeaders": ["*"]
+  }
+]
 ```
 
-Before deploying, copy the generated portable build into `screenbuddy-site/downloads/`.
-That folder is ignored by git so the source repo stays light:
-
-```powershell
-New-Item -ItemType Directory -Force -Path screenbuddy-site\downloads
-Copy-Item "dist\ScreenBuddy 0.1.0.exe" "screenbuddy-site\downloads\ScreenBuddy-0.1.0-beta-win-x64.exe"
-```
+Without this, `fetch()` fails (silently, in the console) and the site falls back
+to `FALLBACK_VERSION` -- broken downloads never ship, but the auto-sync won't
+kick in until CORS is set.
