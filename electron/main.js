@@ -23,6 +23,7 @@ let orb = null;      // the little clickable icon
 let panel = null;    // the glance-card chat
 let appWin = null;   // the full desktop app (settings / pursuits)
 let wardenWin = null; // the Warden countdown overlay
+let currentWardenApp = null; // app the open Warden overlay is guarding against
 let tray = null;
 let dragOffset = { x: 0, y: 0 };
 let buddyStarted = false;
@@ -220,7 +221,8 @@ function showWarden(appName, context = {}) {
   if (wardenWin) return; // one at a time
   const secs = loadConfig().accountability?.wardenSeconds ?? 10;
   const { workArea } = screen.getPrimaryDisplay();
-  const W = 440, H = 320;
+  const W = 500, H = 360;
+  currentWardenApp = appName || 'this app';
   wardenWin = new BrowserWindow({
     width: W, height: H,
     x: Math.round(workArea.x + (workArea.width - W) / 2),
@@ -231,17 +233,18 @@ function showWarden(appName, context = {}) {
   });
   wardenWin.setAlwaysOnTop(true, 'screen-saver');
   const q = new URLSearchParams({
-    app: appName || 'this app',
+    app: currentWardenApp,
     secs: String(secs),
     pursuit: context.pursuit || '',
     reason: context.reason || 'distraction',
     category: context.category || '',
-    currentPursuit: context.currentPursuit || ''
+    currentPursuit: context.currentPursuit || '',
+    locked: accountability.isWardenLocked(currentWardenApp) ? '1' : ''
   }).toString();
   wardenWin.loadFile(path.join(__dirname, '..', 'renderer', 'warden.html'), { search: `?${q}` });
-  wardenWin.on('closed', () => { wardenWin = null; });
+  wardenWin.on('closed', () => { wardenWin = null; currentWardenApp = null; });
 }
-function closeWarden() { if (wardenWin) { wardenWin.close(); wardenWin = null; } }
+function closeWarden() { if (wardenWin) { wardenWin.close(); wardenWin = null; currentWardenApp = null; } }
 
 function jarvisActivePursuit(config) {
   const j = config.jarvis || {};
@@ -669,6 +672,8 @@ ipcMain.handle('premium:upgrade', (event, plan) => { requireAppWindow(event); re
 // ---- Accountability IPC ----
 // Warden overlay result: minimize (reversible) or cancel.
 ipcMain.handle('warden:hide', async () => {
+  // Letting the countdown actually run means it worked — forgive past cancels.
+  if (currentWardenApp) accountability.clearWardenCancels(currentWardenApp);
   closeWarden();
   try { await minimizeActiveWindow(); } catch { /* ignore */ }
   if (lastPrimaryWindow) {
@@ -677,7 +682,16 @@ ipcMain.handle('warden:hide', async () => {
   }
   return { ok: true };
 });
-ipcMain.handle('warden:cancel', () => { closeWarden(); return { ok: true }; });
+ipcMain.handle('warden:cancel', () => {
+  // Enforced server-side, not just in the renderer: repeated bailing on the
+  // same app locks out cancel for its next Warden entirely.
+  if (currentWardenApp && accountability.isWardenLocked(currentWardenApp)) {
+    return { ok: false, locked: true };
+  }
+  if (currentWardenApp) accountability.recordWardenCancel(currentWardenApp);
+  closeWarden();
+  return { ok: true };
+});
 
 // Set the accountability mode + thresholds from the app window.
 ipcMain.handle('buddy:setMode', (event, mode) => {

@@ -27,8 +27,36 @@ let streakKey = null;
 let cooldownUntil = 0;
 let counter = 0;
 
+// Warden cancel-abuse tracking: bailing on the same app's Warden repeatedly
+// in a short window means the countdown isn't doing its job, so the next
+// one for that app locks out cancel entirely (see isWardenLocked).
+const CANCEL_WINDOW_MS = 20 * 60000;
+const CANCEL_LOCK_THRESHOLD = 2;
+const cancelHistory = new Map(); // app -> [timestamps]
+
 function configure(h) { handlers = h || {}; }
 function reset() { streakMs = 0; streakKey = null; }
+
+function recordWardenCancel(app) {
+  const key = app || 'Unknown';
+  const now = Date.now();
+  const hist = (cancelHistory.get(key) || []).filter((t) => now - t < CANCEL_WINDOW_MS);
+  hist.push(now);
+  cancelHistory.set(key, hist);
+}
+
+function isWardenLocked(app) {
+  const key = app || 'Unknown';
+  const now = Date.now();
+  const hist = (cancelHistory.get(key) || []).filter((t) => now - t < CANCEL_WINDOW_MS);
+  return hist.length >= CANCEL_LOCK_THRESHOLD;
+}
+
+// Letting the Warden actually hide the app (instead of bailing) is the
+// behavior we want, so it forgives past cancels for that app.
+function clearWardenCancels(app) {
+  cancelHistory.delete(app || 'Unknown');
+}
 
 function pick(lines, app) {
   const line = lines[counter % lines.length];
@@ -92,4 +120,4 @@ function onSample(config, sample) {
   else if ((mode === 'warden' || mode === 'jarvis') && handlers.onWarden) handlers.onWarden(app, context);
 }
 
-module.exports = { configure, onSample, reset };
+module.exports = { configure, onSample, reset, recordWardenCancel, isWardenLocked, clearWardenCancels };
