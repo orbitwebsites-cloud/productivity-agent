@@ -8,7 +8,7 @@ const RELEASES = 'https://downloads.screenbudy.orbitboyzz.me/releases/';
 // which electron-builder + scripts/publish-release.js regenerate and upload
 // on every tagged release, so the site never depends on someone remembering
 // to hand-edit a version number here again.
-const FALLBACK_VERSION = '0.1.5';
+const FALLBACK_VERSION = '0.1.6';
 
 function urlsFor(version) {
   return {
