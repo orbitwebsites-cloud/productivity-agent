@@ -43,6 +43,7 @@ contextBridge.exposeInMainWorld('buddy', {
   setMode: (mode) => ipcRenderer.invoke('buddy:setMode', mode),
   saveAccountability: (settings) => ipcRenderer.invoke('buddy:saveAccountability', settings),
   saveJarvis: (settings) => ipcRenderer.invoke('buddy:saveJarvis', settings),
+  saveBlocklist: (settings) => ipcRenderer.invoke('buddy:saveBlocklist', settings),
   runAction: (actionId) => ipcRenderer.invoke('buddy:runAction', actionId),
   jarvisWhatsappStatus: () => ipcRenderer.invoke('buddy:jarvisWhatsappStatus'),
   jarvisWhatsappSet: (settings) => ipcRenderer.invoke('buddy:jarvisWhatsappSet', settings),

@@ -66,6 +66,17 @@ const DEFAULTS = {
     wardenSeconds: 10
   },
 
+  // Hard block list (electron/blocker.js) — unlike Warden, there's no
+  // countdown and no cancel. A matching app/site just keeps getting its
+  // focus pulled away every couple seconds. Off by default; user opts specific
+  // apps/sites in via Settings. `sites` match against browser window titles
+  // (no URL access without the separate Browser Control opt-in).
+  blocklist: {
+    enabled: false,
+    apps: [],
+    sites: []
+  },
+
   jarvis: {
     activePursuit: '',
     activeUntil: null,

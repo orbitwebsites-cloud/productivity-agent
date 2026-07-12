@@ -8,6 +8,7 @@ const answers = require('./answers');
 const providers = require('./providers');
 const setup = require('./setup');
 const accountability = require('./accountability');
+const blocker = require('./blocker');
 const premium = require('./premium');
 const updater = require('./updater');
 const jarvisWhatsapp = require('./jarvis-whatsapp');
@@ -276,6 +277,8 @@ function startBuddyRuntime() {
     onDrill: (msg) => notify('Pesto', msg),
     onWarden: (appName, context) => showWarden(appName, context)
   });
+  blocker.configure(minimizeActiveWindow);
+  blocker.start(() => loadConfig());
   tracker.start(() => loadConfig(), (sample) => {
     const cfg = loadConfig();
     rememberPrimaryWindow(cfg, sample);
@@ -494,6 +497,19 @@ ipcMain.handle('buddy:savePursuits', (event, pursuits) => {
 ipcMain.handle('buddy:saveTiers', (event, tiers) => {
   requireAppWindow(event);
   return saveConfig({ privacyTiers: tiers && typeof tiers === 'object' ? tiers : {} });
+});
+// Hard block list (electron/blocker.js) — no countdown, no cancel; see config.js.
+ipcMain.handle('buddy:saveBlocklist', (event, settings) => {
+  requireAppWindow(event);
+  const cur = loadConfig();
+  const clean = (list, fallback) => (Array.isArray(list) ? list.map((s) => String(s || '').trim()).filter(Boolean) : fallback);
+  return saveConfig({
+    blocklist: {
+      enabled: !!(settings?.enabled),
+      apps: clean(settings?.apps, cur.blocklist?.apps || []),
+      sites: clean(settings?.sites, cur.blocklist?.sites || [])
+    }
+  });
 });
 ipcMain.handle('buddy:saveAgentSettings', (event, settings) => {
   requireAppWindow(event);
