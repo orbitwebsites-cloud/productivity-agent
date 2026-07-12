@@ -20,6 +20,10 @@ const DEFAULTS = {
   // a flash-of-wrong-theme on launch, and live-switchable after that.
   theme: 'light',
 
+  // Floating orb's mascot image size in px (the window is sized a bit larger
+  // than this so the hover bounce doesn't clip). Changeable in Settings.
+  orbSize: 84,
+
   setup: {
     status: 'pending',
     lastError: '',

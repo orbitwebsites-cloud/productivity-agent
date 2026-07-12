@@ -120,7 +120,16 @@
         <button class="navitem" data-page="blocker">App/Site Blocker</button>
         <button class="navitem" data-page="premium">Premium ✨</button>
       </nav>
-      <button id="themeToggle" class="theme-toggle" style="margin-top:auto" type="button"
+      <div class="orbsize-picker" style="margin-top:auto">
+        <label class="fieldlabel" for="orbSize">Pesto size</label>
+        <select id="orbSize" class="field">
+          <option value="64">Small</option>
+          <option value="84">Medium</option>
+          <option value="110">Large</option>
+          <option value="140">XL</option>
+        </select>
+      </div>
+      <button id="themeToggle" class="theme-toggle" type="button"
         aria-label="Switch between Daylight and Midnight theme">🌓 <span id="themeToggleLabel">Daylight</span></button>
       <button id="visitSite" class="ghostbtn">🌐 Visit our website</button>
     </aside>

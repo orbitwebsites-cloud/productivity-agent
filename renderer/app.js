@@ -102,6 +102,7 @@ async function refreshSetup() {
   const cfg = await window.buddy.getConfig();
   applySetupState(cfg);
   updateThemeToggleLabel(cfg.theme);
+  document.getElementById('orbSize').value = String(cfg.orbSize || 84);
   if (setupReady) {
     await loadPursuits();
   }
@@ -159,6 +160,9 @@ document.getElementById('pickThemeDark').addEventListener('click', () => chooseT
 function updateThemeToggleLabel(theme) {
   document.getElementById('themeToggleLabel').textContent = theme === 'dark' ? 'Midnight' : 'Daylight';
 }
+document.getElementById('orbSize').addEventListener('change', async (e) => {
+  await window.buddy.setOrbSize(Number(e.target.value));
+});
 document.getElementById('themeToggle').addEventListener('click', async () => {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   await chooseTheme(next);

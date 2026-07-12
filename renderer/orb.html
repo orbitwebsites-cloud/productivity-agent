@@ -4,28 +4,65 @@
 <meta charset="UTF-8" />
 <title>Pesto</title>
 <style>
+  :root { --img-size: 84px; }
   html, body { margin:0; height:100%; background:transparent; overflow:hidden;
     -webkit-user-select:none; user-select:none; cursor:pointer; }
   @keyframes orbIdle {
-    0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 8px 14px rgba(120,60,30,0.35)); }
-    50% { transform: translateY(-4px) scale(1.02); filter: drop-shadow(0 12px 20px rgba(201,100,66,0.45)); }
+    0%, 100% { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 8px 14px rgba(120,60,30,0.35)); }
+    50% { transform: translateY(-4px) rotate(0deg) scale(1.02); filter: drop-shadow(0 12px 20px rgba(201,100,66,0.45)); }
+  }
+  /* Occasional personality tics so the orb isn't just a metronome — picked
+     at random on an interval by orb.js, played once, then back to the bob. */
+  @keyframes ticTiltLeft {
+    0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+    30% { transform: translateY(-2px) rotate(-8deg) scale(1.03); }
+    60% { transform: translateY(-2px) rotate(6deg) scale(1.03); }
+  }
+  @keyframes ticTiltRight {
+    0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+    30% { transform: translateY(-2px) rotate(8deg) scale(1.03); }
+    60% { transform: translateY(-2px) rotate(-6deg) scale(1.03); }
+  }
+  @keyframes ticHop {
+    0%, 100% { transform: translateY(0) scale(1); }
+    25% { transform: translateY(-10px) scale(1.05); }
+    45% { transform: translateY(0) scale(0.97); }
+    65% { transform: translateY(-5px) scale(1.02); }
+  }
+  @keyframes celebrateSpin {
+    0% { transform: translateY(0) rotate(0deg) scale(1); }
+    20% { transform: translateY(-14px) rotate(-14deg) scale(1.15); }
+    40% { transform: translateY(-4px) rotate(10deg) scale(1.1); }
+    60% { transform: translateY(-16px) rotate(-8deg) scale(1.18); }
+    80% { transform: translateY(-2px) rotate(6deg) scale(1.08); }
+    100% { transform: translateY(0) rotate(0deg) scale(1); }
+  }
+  @keyframes sparklePop {
+    0% { opacity: 0; transform: translateY(0) scale(0.4); }
+    30% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-38px) scale(1.1); }
   }
   #orb { position:absolute; inset:0; display:grid; place-items:center; }
   #orb img {
-    width:84px; height:84px; object-fit:contain; -webkit-user-drag:none; pointer-events:none;
+    width:var(--img-size); height:var(--img-size); object-fit:contain; -webkit-user-drag:none; pointer-events:none;
     filter: drop-shadow(0 8px 14px rgba(120,60,30,0.35));
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+    transition: filter 0.3s ease;
     animation: orbIdle 3.6s ease-in-out infinite;
   }
-  #orb:hover img {
-    transform: translateY(-6px) scale(1.12);
-    filter: drop-shadow(0 16px 28px rgba(201,100,66,0.55));
-  }
-  #orb:active img { transform: scale(0.95); transition-duration: 0.1s; }
+  #orb img.tic-tilt-left { animation: ticTiltLeft 0.9s ease-in-out 1; }
+  #orb img.tic-tilt-right { animation: ticTiltRight 0.9s ease-in-out 1; }
+  #orb img.tic-hop { animation: ticHop 0.8s ease-in-out 1; }
+  #orb img.celebrating { animation: celebrateSpin 1.1s ease-in-out 2; }
+  #orb:hover img { filter: drop-shadow(0 16px 28px rgba(201,100,66,0.55)); }
+  #orb:hover img:not(.celebrating) { transform: translateY(-6px) scale(1.12); animation-play-state: paused; }
+  #orb:active img:not(.celebrating) { transform: scale(0.95); animation-play-state: paused; }
+  .sparkle { position:absolute; font-size:18px; opacity:0; pointer-events:none; animation: sparklePop 1s ease-out forwards; }
 </style>
 </head>
 <body>
-  <div id="orb"><img src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" /></div>
+  <div id="orb">
+    <img id="mascot" src="../assets/pesto/screenbuddy_mascot_idle.png" alt="Pesto" />
+  </div>
   <script src="orb.js"></script>
 </body>
 </html>

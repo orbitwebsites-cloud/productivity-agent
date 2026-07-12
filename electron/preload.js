@@ -21,6 +21,8 @@ contextBridge.exposeInMainWorld('buddy', {
   orbToggle: () => ipcRenderer.invoke('orb:toggle'),
   dragStart: (x, y) => ipcRenderer.send('orb:dragStart', { x, y }),
   dragMove: (x, y) => ipcRenderer.send('orb:dragMove', { x, y }),
+  onOrbSize: (cb) => ipcRenderer.on('orb:size', (_e, size) => cb(size)),
+  onOrbMood: (cb) => ipcRenderer.on('orb:mood', (_e, mood) => cb(mood)),
 
   // ---- panel (the glance-card chat) ----
   ask: (question) => ipcRenderer.invoke('buddy:ask', question),
@@ -35,6 +37,7 @@ contextBridge.exposeInMainWorld('buddy', {
   declineSetup: () => ipcRenderer.invoke('buddy:declineSetup'),
   completeOnboarding: () => ipcRenderer.invoke('buddy:completeOnboarding'),
   setTheme: (theme) => ipcRenderer.invoke('buddy:setTheme', theme),
+  setOrbSize: (size) => ipcRenderer.invoke('buddy:setOrbSize', size),
   openSetupHelp: (errorText) => ipcRenderer.invoke('buddy:openSetupHelp', errorText),
   recentApps: () => ipcRenderer.invoke('buddy:recentApps'),
   scanApps: () => ipcRenderer.invoke('buddy:scanApps'),

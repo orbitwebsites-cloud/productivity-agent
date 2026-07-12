@@ -178,4 +178,4 @@ async function answer(question, config) {
   return deterministicAnswer(question, a, label);
 }
 
-module.exports = { answer, summarize, rangeFor, fmt, startOfDay };
+module.exports = { answer, summarize, rangeFor, fmt, startOfDay, currentStreakDays };

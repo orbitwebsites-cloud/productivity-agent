@@ -37,15 +37,24 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', () => showPanel());
 }
 
-const ORB_SIZE = 110;
+const ORB_SIZES = [64, 84, 110, 140]; // Small / Medium / Large / XL mascot px
+const ORB_WINDOW_MARGIN = 34; // headroom so the hover bounce doesn't clip
+
+function orbImgSize(config) {
+  const size = Number((config || loadConfig()).orbSize) || 84;
+  return ORB_SIZES.includes(size) ? size : 84;
+}
+function orbWindowSize(imgSize) { return imgSize + ORB_WINDOW_MARGIN; }
 
 function createOrb() {
   const { workArea } = screen.getPrimaryDisplay();
+  const imgSize = orbImgSize();
+  const winSize = orbWindowSize(imgSize);
   orb = new BrowserWindow({
-    width: ORB_SIZE,
-    height: ORB_SIZE,
-    x: workArea.x + workArea.width - ORB_SIZE - 24,
-    y: workArea.y + workArea.height - ORB_SIZE - 24,
+    width: winSize,
+    height: winSize,
+    x: workArea.x + workArea.width - winSize - 24,
+    y: workArea.y + workArea.height - winSize - 24,
     frame: false,
     transparent: true,
     resizable: false,
@@ -58,8 +67,21 @@ function createOrb() {
   });
   orb.setAlwaysOnTop(true, 'screen-saver');
   orb.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  orb.loadFile(path.join(__dirname, '..', 'renderer', 'orb.html'));
+  orb.loadFile(path.join(__dirname, '..', 'renderer', 'orb.html'), { search: `?img=${imgSize}` });
   orb.on('closed', () => { orb = null; });
+}
+
+// Resize the orb in place (keeping whatever corner it's currently anchored
+// to, dragged or not) instead of recreating the window, so it doesn't jump.
+function resizeOrb(imgSize) {
+  if (!orb) return;
+  const prev = orb.getBounds();
+  const winSize = orbWindowSize(imgSize);
+  const right = prev.x + prev.width;
+  const bottom = prev.y + prev.height;
+  orb.setBounds({ x: Math.round(right - winSize), y: Math.round(bottom - winSize), width: winSize, height: winSize });
+  orb.webContents.send('orb:size', imgSize);
+  if (panel && panel.isVisible()) positionPanelNearOrb();
 }
 
 function createPanel() {
@@ -73,6 +95,10 @@ function createPanel() {
   panel.setAlwaysOnTop(true, 'screen-saver');
   panel.loadFile(path.join(__dirname, '..', 'renderer', 'panel.html'));
   panel.on('closed', () => { panel = null; });
+  // Click-away-to-close: the orb is `focusable: false` so tapping it never
+  // steals OS focus (no toggle-fights-blur race) — but clicking literally
+  // anywhere else blurs this window, so treat that as "dismiss."
+  panel.on('blur', () => { if (panel && panel.isVisible()) panel.hide(); });
 }
 
 // Anchor the panel just above the orb, clamped to the screen work area.
@@ -268,6 +294,24 @@ function rememberPrimaryWindow(config, sample) {
   };
 }
 
+// Streak checks hit the activity DB across up to 30 days, so throttle it —
+// no need to run this on every 5s tracker tick, just often enough to catch
+// the moment a new day-streak lands during the current session.
+let lastKnownStreakDays = -1;
+let lastStreakCheckAt = 0;
+function checkStreakCelebration() {
+  const now = Date.now();
+  if (now - lastStreakCheckAt < 5 * 60000) return;
+  lastStreakCheckAt = now;
+  try {
+    const days = answers.currentStreakDays();
+    if (lastKnownStreakDays >= 0 && days > lastKnownStreakDays && orb) {
+      orb.webContents.send('orb:mood', 'celebrate');
+    }
+    lastKnownStreakDays = days;
+  } catch { /* best-effort */ }
+}
+
 function startBuddyRuntime() {
   if (buddyStarted) return;
   createOrb();
@@ -284,6 +328,7 @@ function startBuddyRuntime() {
     rememberPrimaryWindow(cfg, sample);
     accountability.onSample(cfg, sample);
     if (cfg.mode !== 'chill') loopnudge.onSample(sample, offerCopyPasteTakeover);
+    checkStreakCelebration();
   });
   buddyStarted = true;
 
@@ -569,6 +614,13 @@ ipcMain.handle('buddy:setTheme', (event, theme) => {
   const value = theme === 'dark' ? 'dark' : 'light';
   return saveConfig({ theme: value, onboarding: { themeChosen: true } });
 });
+ipcMain.handle('buddy:setOrbSize', (event, size) => {
+  requireAppWindow(event);
+  const imgSize = ORB_SIZES.includes(Number(size)) ? Number(size) : 84;
+  const cfg = saveConfig({ orbSize: imgSize });
+  resizeOrb(imgSize);
+  return cfg;
+});
 ipcMain.handle('buddy:openSetupHelp', async (event, errorText) => {
   requireAppWindow(event);
   const cfg = loadConfig();
@@ -713,6 +765,7 @@ ipcMain.handle('warden:hide', async () => {
     await new Promise((resolve) => setTimeout(resolve, 180));
     try { await activateWindow(lastPrimaryWindow); } catch { /* best-effort */ }
   }
+  if (orb) orb.webContents.send('orb:mood', 'celebrate'); // real win — reward it
   return { ok: true };
 });
 ipcMain.handle('warden:cancel', () => {
