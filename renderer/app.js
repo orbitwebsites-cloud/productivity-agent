@@ -102,6 +102,7 @@ async function refreshSetup() {
   const cfg = await window.buddy.getConfig();
   applySetupState(cfg);
   updateThemeToggleLabel(cfg.theme);
+  document.getElementById('orbSize').value = String(cfg.orbSize || 84);
   if (setupReady) {
     await loadPursuits();
   }
@@ -159,6 +160,9 @@ document.getElementById('pickThemeDark').addEventListener('click', () => chooseT
 function updateThemeToggleLabel(theme) {
   document.getElementById('themeToggleLabel').textContent = theme === 'dark' ? 'Midnight' : 'Daylight';
 }
+document.getElementById('orbSize').addEventListener('change', async (e) => {
+  await window.buddy.setOrbSize(Number(e.target.value));
+});
 document.getElementById('themeToggle').addEventListener('click', async () => {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   await chooseTheme(next);
@@ -220,6 +224,7 @@ document.querySelectorAll('.navitem').forEach((b) => {
     if (target) { target.hidden = false; requestAnimationFrame(() => target.classList.add('active')); }
     if (page === 'privacy') loadPrivacy();
     if (page === 'jarvis') { loadJarvis(); loadJarvisWa(); loadBrowserControl(); loadAutofill(); }
+    if (page === 'blocker') loadBlocklist();
     if (page === 'premium') loadPremium();
   });
 });
@@ -383,6 +388,29 @@ async function saveJarvis(clearGoal = false) {
 
 document.getElementById('saveJarvis').addEventListener('click', () => saveJarvis(false));
 document.getElementById('clearJarvisGoal').addEventListener('click', () => saveJarvis(true));
+
+// ---------- App/Site Blocker ----------
+async function loadBlocklist() {
+  const cfg = await window.buddy.getConfig();
+  const bl = cfg.blocklist || {};
+  document.getElementById('blocklistEnabled').checked = !!bl.enabled;
+  document.getElementById('blockApps').value = (bl.apps || []).join('\n');
+  document.getElementById('blockSites').value = (bl.sites || []).join('\n');
+}
+
+async function saveBlocklist() {
+  const splitLines = (text) => text.split('\n').map((s) => s.trim()).filter(Boolean);
+  const settings = {
+    enabled: document.getElementById('blocklistEnabled').checked,
+    apps: splitLines(document.getElementById('blockApps').value),
+    sites: splitLines(document.getElementById('blockSites').value)
+  };
+  await window.buddy.saveBlocklist(settings);
+  flash('blocklistMsg', 'Block list saved.');
+  await loadBlocklist();
+}
+
+document.getElementById('saveBlocklist').addEventListener('click', () => saveBlocklist());
 
 // ---------- Jarvis Mode: WhatsApp Remote (beta) ----------
 function renderJarvisWaStatus(s) {

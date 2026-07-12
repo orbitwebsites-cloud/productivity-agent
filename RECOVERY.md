@@ -1,6 +1,6 @@
 # RECOVERY — ScreenBuddy
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-07-12
 
 ## Product model (decided — see SPEC.md §13)
 - Free tier = local (tracking, deterministic answers, accountability modes). No account.
@@ -167,6 +167,23 @@ frictionless sign-up (currently requires clicking an email link before first sig
     a known code problem, but it means **this packaging config is unverified** — build it for
     real (`npm run build:win`) and confirm WhatsApp QR pairing actually works from the packaged
     `.exe`, not just `npm start`, before shipping it to anyone.
+- **2026-07-12 — WhatsApp engine swapped to Baileys, the Puppeteer bloat above is gone**:
+  replaced `whatsapp-web.js` with `@whiskeysockets/baileys` in `electron/jarvis-whatsapp.js`.
+  Baileys speaks the WhatsApp Web multi-device protocol directly over a WebSocket — no bundled
+  Chromium at all, so the ~626MB Puppeteer download and the `asarUnpack`/`build.files` entries
+  for it are gone from `package.json` entirely (dropped from 536 to 407 installed packages).
+  Same `status()`/event contract preserved (`main.js`/`app.js` untouched) and the same
+  `fromMe` + self-chat-JID scoping (now via Baileys' `jidNormalizedUser`), verified with a
+  mocked-socket test exercising QR → ready → message-routing, including confirming messages
+  from other chats and non-`fromMe` messages are still ignored. Auth session now persists via
+  `useMultiFileAuthState` in `userData/jarvis-whatsapp-auth` instead of `whatsapp-web.js`'s
+  `LocalAuth` profile dir — **first pairing after this change requires a fresh QR scan**, old
+  sessions don't carry over. Pinned to the `6.7.23` "legacy" tag, not the `7.0.0-rc*` line,
+  since a real WhatsApp integration shouldn't ride a release candidate.
+  **Not verified: an actual live QR pairing + round-trip message on a real phone** — the mocked
+  test proves the wiring is correct, not that Baileys' real protocol implementation behaves
+  identically to `whatsapp-web.js` in production (reconnect-after-network-blip behavior in
+  particular is new code here, untested against a real disconnect). Test that before shipping.
 - **Google sign-in** (`electron/oauth.js`): Supabase OAuth + PKCE, no supabase-js SDK — matches
   the existing plain-REST auth pattern in `premium.js`. Flow: open the system browser to
   Supabase's `/authorize?provider=google` with a PKCE challenge → a short-lived local HTTP

@@ -8,6 +8,7 @@ const answers = require('./answers');
 const providers = require('./providers');
 const setup = require('./setup');
 const accountability = require('./accountability');
+const blocker = require('./blocker');
 const premium = require('./premium');
 const updater = require('./updater');
 const jarvisWhatsapp = require('./jarvis-whatsapp');
@@ -23,6 +24,7 @@ let orb = null;      // the little clickable icon
 let panel = null;    // the glance-card chat
 let appWin = null;   // the full desktop app (settings / pursuits)
 let wardenWin = null; // the Warden countdown overlay
+let currentWardenApp = null; // app the open Warden overlay is guarding against
 let tray = null;
 let dragOffset = { x: 0, y: 0 };
 let buddyStarted = false;
@@ -35,15 +37,24 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', () => showPanel());
 }
 
-const ORB_SIZE = 110;
+const ORB_SIZES = [64, 84, 110, 140]; // Small / Medium / Large / XL mascot px
+const ORB_WINDOW_MARGIN = 34; // headroom so the hover bounce doesn't clip
+
+function orbImgSize(config) {
+  const size = Number((config || loadConfig()).orbSize) || 84;
+  return ORB_SIZES.includes(size) ? size : 84;
+}
+function orbWindowSize(imgSize) { return imgSize + ORB_WINDOW_MARGIN; }
 
 function createOrb() {
   const { workArea } = screen.getPrimaryDisplay();
+  const imgSize = orbImgSize();
+  const winSize = orbWindowSize(imgSize);
   orb = new BrowserWindow({
-    width: ORB_SIZE,
-    height: ORB_SIZE,
-    x: workArea.x + workArea.width - ORB_SIZE - 24,
-    y: workArea.y + workArea.height - ORB_SIZE - 24,
+    width: winSize,
+    height: winSize,
+    x: workArea.x + workArea.width - winSize - 24,
+    y: workArea.y + workArea.height - winSize - 24,
     frame: false,
     transparent: true,
     resizable: false,
@@ -56,8 +67,21 @@ function createOrb() {
   });
   orb.setAlwaysOnTop(true, 'screen-saver');
   orb.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  orb.loadFile(path.join(__dirname, '..', 'renderer', 'orb.html'));
+  orb.loadFile(path.join(__dirname, '..', 'renderer', 'orb.html'), { search: `?img=${imgSize}` });
   orb.on('closed', () => { orb = null; });
+}
+
+// Resize the orb in place (keeping whatever corner it's currently anchored
+// to, dragged or not) instead of recreating the window, so it doesn't jump.
+function resizeOrb(imgSize) {
+  if (!orb) return;
+  const prev = orb.getBounds();
+  const winSize = orbWindowSize(imgSize);
+  const right = prev.x + prev.width;
+  const bottom = prev.y + prev.height;
+  orb.setBounds({ x: Math.round(right - winSize), y: Math.round(bottom - winSize), width: winSize, height: winSize });
+  orb.webContents.send('orb:size', imgSize);
+  if (panel && panel.isVisible()) positionPanelNearOrb();
 }
 
 function createPanel() {
@@ -71,6 +95,10 @@ function createPanel() {
   panel.setAlwaysOnTop(true, 'screen-saver');
   panel.loadFile(path.join(__dirname, '..', 'renderer', 'panel.html'));
   panel.on('closed', () => { panel = null; });
+  // Click-away-to-close: the orb is `focusable: false` so tapping it never
+  // steals OS focus (no toggle-fights-blur race) — but clicking literally
+  // anywhere else blurs this window, so treat that as "dismiss."
+  panel.on('blur', () => { if (panel && panel.isVisible()) panel.hide(); });
 }
 
 // Anchor the panel just above the orb, clamped to the screen work area.
@@ -136,7 +164,17 @@ const MODES = [
 
 const LIMITS = [5, 10, 15, 30, 60];
 
-function setMode(id) { saveConfig({ mode: id }); accountability.reset(); refreshTray(); }
+// Pesto's ambient face: sleepy while chill mode/tracking-paused (nothing being
+// enforced), idle otherwise. Momentary flashes/holds (nudge, drill, alert,
+// thinking, celebrate) layer on top of this in orb.js and fall back to it.
+function syncOrbMood() {
+  if (!orb) return;
+  const cfg = loadConfig();
+  const sleepy = cfg.mode === 'chill' || !cfg.trackingEnabled;
+  orb.webContents.send('orb:mood', { kind: 'ambient', mood: sleepy ? 'sleepy' : 'idle' });
+}
+
+function setMode(id) { saveConfig({ mode: id }); accountability.reset(); refreshTray(); syncOrbMood(); }
 function setLimit(min) {
   const cur = loadConfig();
   saveConfig({ accountability: { ...(cur.accountability || {}), distractionLimitMin: min } });
@@ -164,7 +202,7 @@ function trayMenu() {
         label: `${n} minutes`, type: 'radio', checked: curLimit === n, click: () => setLimit(n)
       }))
     },
-    { label: 'Pause / resume tracking', click: () => saveConfig({ trackingEnabled: !loadConfig().trackingEnabled }) },
+    { label: 'Pause / resume tracking', click: () => { saveConfig({ trackingEnabled: !loadConfig().trackingEnabled }); syncOrbMood(); } },
     { type: 'separator' },
     { label: 'Visit our website', click: () => shell.openExternal('https://screenbudy.orbitboyzz.me/') },
     { type: 'separator' },
@@ -220,7 +258,8 @@ function showWarden(appName, context = {}) {
   if (wardenWin) return; // one at a time
   const secs = loadConfig().accountability?.wardenSeconds ?? 10;
   const { workArea } = screen.getPrimaryDisplay();
-  const W = 440, H = 320;
+  const W = 500, H = 360;
+  currentWardenApp = appName || 'this app';
   wardenWin = new BrowserWindow({
     width: W, height: H,
     x: Math.round(workArea.x + (workArea.width - W) / 2),
@@ -230,18 +269,30 @@ function showWarden(appName, context = {}) {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
   });
   wardenWin.setAlwaysOnTop(true, 'screen-saver');
+  const locked = accountability.isWardenLocked(currentWardenApp);
   const q = new URLSearchParams({
-    app: appName || 'this app',
+    app: currentWardenApp,
     secs: String(secs),
     pursuit: context.pursuit || '',
     reason: context.reason || 'distraction',
     category: context.category || '',
-    currentPursuit: context.currentPursuit || ''
+    currentPursuit: context.currentPursuit || '',
+    locked: locked ? '1' : ''
   }).toString();
   wardenWin.loadFile(path.join(__dirname, '..', 'renderer', 'warden.html'), { search: `?${q}` });
-  wardenWin.on('closed', () => { wardenWin = null; });
+  wardenWin.on('closed', () => { wardenWin = null; currentWardenApp = null; });
+  if (orb) {
+    // Locked (repeat cancel-abuse) gets a sharp angry flash instead of the
+    // ordinary alert hold — it's a reaction to being pushed too far, not a
+    // face Pesto should sit in for the whole countdown.
+    if (locked) orb.webContents.send('orb:mood', { kind: 'flash', mood: 'angry' });
+    else orb.webContents.send('orb:mood', { kind: 'hold', mood: 'alert' });
+  }
 }
-function closeWarden() { if (wardenWin) { wardenWin.close(); wardenWin = null; } }
+function closeWarden() {
+  if (wardenWin) { wardenWin.close(); wardenWin = null; currentWardenApp = null; }
+  if (orb) orb.webContents.send('orb:mood', { kind: 'holdEnd' });
+}
 
 function jarvisActivePursuit(config) {
   const j = config.jarvis || {};
@@ -264,20 +315,42 @@ function rememberPrimaryWindow(config, sample) {
   };
 }
 
+// Streak checks hit the activity DB across up to 30 days, so throttle it —
+// no need to run this on every 5s tracker tick, just often enough to catch
+// the moment a new day-streak lands during the current session.
+let lastKnownStreakDays = -1;
+let lastStreakCheckAt = 0;
+function checkStreakCelebration() {
+  const now = Date.now();
+  if (now - lastStreakCheckAt < 5 * 60000) return;
+  lastStreakCheckAt = now;
+  try {
+    const days = answers.currentStreakDays();
+    if (lastKnownStreakDays >= 0 && days > lastKnownStreakDays && orb) {
+      orb.webContents.send('orb:mood', { kind: 'flash', mood: 'celebrate' });
+    }
+    lastKnownStreakDays = days;
+  } catch { /* best-effort */ }
+}
+
 function startBuddyRuntime() {
   if (buddyStarted) return;
   createOrb();
   createPanel();
+  syncOrbMood();
   accountability.configure({
-    onNudge: (msg) => notify('Pesto', msg),
-    onDrill: (msg) => notify('Pesto', msg),
+    onNudge: (msg) => { notify('Pesto', msg); if (orb) orb.webContents.send('orb:mood', { kind: 'flash', mood: 'nudge' }); },
+    onDrill: (msg) => { notify('Pesto', msg); if (orb) orb.webContents.send('orb:mood', { kind: 'flash', mood: 'drill' }); },
     onWarden: (appName, context) => showWarden(appName, context)
   });
+  blocker.configure(minimizeActiveWindow);
+  blocker.start(() => loadConfig());
   tracker.start(() => loadConfig(), (sample) => {
     const cfg = loadConfig();
     rememberPrimaryWindow(cfg, sample);
     accountability.onSample(cfg, sample);
     if (cfg.mode !== 'chill') loopnudge.onSample(sample, offerCopyPasteTakeover);
+    checkStreakCelebration();
   });
   buddyStarted = true;
 
@@ -384,6 +457,23 @@ async function handleJarvisQuestion(question) {
     return { text: goal ? `Jarvis mode is on, guarding ${goal}.` : 'Jarvis mode is on. Set an active pursuit and I will guard it.' };
   }
 
+  // "Open Spotify", "launch Discord", "switch to Notepad" — actually do it, not just
+  // talk about it. Reuses the same launch/activate primitive restoreWorkspace() uses,
+  // so the risk surface stays the same: focus/launch an app by name, nothing more —
+  // no simulated keystrokes or clicks inside it.
+  const openMatch = q.match(/^(?:open|launch|switch\s+to|start)\s+(.+)$/i);
+  if (openMatch && !/\b(goal|pursuit)\b/i.test(lower)) {
+    const target = openMatch[1].trim().replace(/\s+(please|for me)$/i, '');
+    if (target) {
+      try {
+        const ok = await launchOrActivateApp(target);
+        return { text: ok ? `Opened ${target} for you.` : `Couldn't find or launch "${target}" on this machine.` };
+      } catch {
+        return { text: `Couldn't find or launch "${target}" on this machine.` };
+      }
+    }
+  }
+
   const wantsRecovery = lower.includes('where was i') ||
     lower.includes('restore yesterday') ||
     (lower.includes('working on') && lower.includes('yesterday'));
@@ -436,7 +526,14 @@ function extensionDir() {
 }
 
 // ---- panel IPC ----
-ipcMain.handle('buddy:ask', (_e, question) => buddyAsk(question));
+ipcMain.handle('buddy:ask', async (_e, question) => {
+  if (orb) orb.webContents.send('orb:mood', { kind: 'hold', mood: 'thinking' });
+  try {
+    return await buddyAsk(question);
+  } finally {
+    if (orb) orb.webContents.send('orb:mood', { kind: 'holdEnd' });
+  }
+});
 ipcMain.handle('buddy:today', () => {
   const start = answers.startOfDay(Date.now());
   const s = answers.summarize(start, Date.now());
@@ -492,6 +589,19 @@ ipcMain.handle('buddy:saveTiers', (event, tiers) => {
   requireAppWindow(event);
   return saveConfig({ privacyTiers: tiers && typeof tiers === 'object' ? tiers : {} });
 });
+// Hard block list (electron/blocker.js) — no countdown, no cancel; see config.js.
+ipcMain.handle('buddy:saveBlocklist', (event, settings) => {
+  requireAppWindow(event);
+  const cur = loadConfig();
+  const clean = (list, fallback) => (Array.isArray(list) ? list.map((s) => String(s || '').trim()).filter(Boolean) : fallback);
+  return saveConfig({
+    blocklist: {
+      enabled: !!(settings?.enabled),
+      apps: clean(settings?.apps, cur.blocklist?.apps || []),
+      sites: clean(settings?.sites, cur.blocklist?.sites || [])
+    }
+  });
+});
 ipcMain.handle('buddy:saveAgentSettings', (event, settings) => {
   requireAppWindow(event);
   const current = loadConfig();
@@ -532,6 +642,13 @@ ipcMain.handle('buddy:setTheme', (event, theme) => {
   requireAppWindow(event);
   const value = theme === 'dark' ? 'dark' : 'light';
   return saveConfig({ theme: value, onboarding: { themeChosen: true } });
+});
+ipcMain.handle('buddy:setOrbSize', (event, size) => {
+  requireAppWindow(event);
+  const imgSize = ORB_SIZES.includes(Number(size)) ? Number(size) : 84;
+  const cfg = saveConfig({ orbSize: imgSize });
+  resizeOrb(imgSize);
+  return cfg;
 });
 ipcMain.handle('buddy:openSetupHelp', async (event, errorText) => {
   requireAppWindow(event);
@@ -669,15 +786,27 @@ ipcMain.handle('premium:upgrade', (event, plan) => { requireAppWindow(event); re
 // ---- Accountability IPC ----
 // Warden overlay result: minimize (reversible) or cancel.
 ipcMain.handle('warden:hide', async () => {
+  // Letting the countdown actually run means it worked — forgive past cancels.
+  if (currentWardenApp) accountability.clearWardenCancels(currentWardenApp);
   closeWarden();
   try { await minimizeActiveWindow(); } catch { /* ignore */ }
   if (lastPrimaryWindow) {
     await new Promise((resolve) => setTimeout(resolve, 180));
     try { await activateWindow(lastPrimaryWindow); } catch { /* best-effort */ }
   }
+  if (orb) orb.webContents.send('orb:mood', { kind: 'flash', mood: 'celebrate' }); // real win — reward it
   return { ok: true };
 });
-ipcMain.handle('warden:cancel', () => { closeWarden(); return { ok: true }; });
+ipcMain.handle('warden:cancel', () => {
+  // Enforced server-side, not just in the renderer: repeated bailing on the
+  // same app locks out cancel for its next Warden entirely.
+  if (currentWardenApp && accountability.isWardenLocked(currentWardenApp)) {
+    return { ok: false, locked: true };
+  }
+  if (currentWardenApp) accountability.recordWardenCancel(currentWardenApp);
+  closeWarden();
+  return { ok: true };
+});
 
 // Set the accountability mode + thresholds from the app window.
 ipcMain.handle('buddy:setMode', (event, mode) => {
@@ -686,6 +815,7 @@ ipcMain.handle('buddy:setMode', (event, mode) => {
   const cfg = saveConfig({ mode: id });
   accountability.reset();
   refreshTray();
+  syncOrbMood();
   return cfg;
 });
 ipcMain.handle('buddy:saveAccountability', (event, settings) => {
@@ -698,6 +828,7 @@ ipcMain.handle('buddy:saveAccountability', (event, settings) => {
   });
   accountability.reset();
   refreshTray();
+  syncOrbMood();
   return cfg;
 });
 

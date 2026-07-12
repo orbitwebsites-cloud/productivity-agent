@@ -20,6 +20,10 @@ const DEFAULTS = {
   // a flash-of-wrong-theme on launch, and live-switchable after that.
   theme: 'light',
 
+  // Floating orb's mascot image size in px (the window is sized a bit larger
+  // than this so the hover bounce doesn't clip). Changeable in Settings.
+  orbSize: 84,
+
   setup: {
     status: 'pending',
     lastError: '',
@@ -64,6 +68,17 @@ const DEFAULTS = {
     focusDriftLimitMin: 15,
     cooldownMin: 5,
     wardenSeconds: 10
+  },
+
+  // Hard block list (electron/blocker.js) — unlike Warden, there's no
+  // countdown and no cancel. A matching app/site just keeps getting its
+  // focus pulled away every couple seconds. Off by default; user opts specific
+  // apps/sites in via Settings. `sites` match against browser window titles
+  // (no URL access without the separate Browser Control opt-in).
+  blocklist: {
+    enabled: false,
+    apps: [],
+    sites: []
   },
 
   jarvis: {

@@ -117,9 +117,19 @@
         <button class="navitem active" data-page="pursuits">Life Pursuits</button>
         <button class="navitem" data-page="privacy">Privacy Tiers</button>
         <button class="navitem" data-page="jarvis">Jarvis Mode</button>
+        <button class="navitem" data-page="blocker">App/Site Blocker</button>
         <button class="navitem" data-page="premium">Premium ✨</button>
       </nav>
-      <button id="themeToggle" class="theme-toggle" style="margin-top:auto" type="button"
+      <div class="orbsize-picker" style="margin-top:auto">
+        <label class="fieldlabel" for="orbSize">Pesto size</label>
+        <select id="orbSize" class="field">
+          <option value="64">Small</option>
+          <option value="84">Medium</option>
+          <option value="110">Large</option>
+          <option value="140">XL</option>
+        </select>
+      </div>
+      <button id="themeToggle" class="theme-toggle" type="button"
         aria-label="Switch between Daylight and Midnight theme">🌓 <span id="themeToggleLabel">Daylight</span></button>
       <button id="visitSite" class="ghostbtn">🌐 Visit our website</button>
     </aside>
@@ -334,6 +344,35 @@
           <button id="saveAutofill" class="save">Save autofill profile</button>
           <button id="testAutofill" class="ghostsave">Fill active browser tab now</button>
           <span id="autofillMsg" class="savemsg"></span>
+        </div>
+      </section>
+
+      <section id="page-blocker" class="page" hidden>
+        <h1>App/Site Blocker</h1>
+        <p class="lead">Different from Jarvis/Warden above: this is a <b>hard block</b>, no countdown
+          and no cancel. Anything listed here gets its focus pulled away every couple seconds, on
+          repeat, for as long as it's on the list.</p>
+        <p class="hint">Site blocking matches against the browser window's title (no URL access
+          needed), so use the plain name — <code>reddit</code>, <code>youtube</code>,
+          <code>twitter</code> — not a full URL.</p>
+
+        <div class="agentbox">
+          <label class="fieldlabel">
+            <input id="blocklistEnabled" type="checkbox" /> Enable hard blocking
+          </label>
+
+          <label class="fieldlabel" for="blockApps">Blocked apps (one per line)</label>
+          <textarea id="blockApps" class="field" rows="4" spellcheck="false"
+            placeholder="Steam&#10;Discord"></textarea>
+
+          <label class="fieldlabel" for="blockSites">Blocked sites (one per line, name not URL)</label>
+          <textarea id="blockSites" class="field" rows="4" spellcheck="false"
+            placeholder="reddit&#10;youtube&#10;twitter"></textarea>
+        </div>
+
+        <div class="saverow">
+          <button id="saveBlocklist" class="save">Save block list</button>
+          <span id="blocklistMsg" class="savemsg"></span>
         </div>
       </section>
 
