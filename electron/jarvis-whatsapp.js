@@ -157,6 +157,8 @@ function helpText() {
     '  "what was I working on today?"',
     '  "focus on Tech Job for 45 min"',
     '  "restore my workspace"',
+    '  "open Spotify" / "launch Discord" / "switch to Notepad" — actually opens/',
+    '    focuses it on your machine',
     '',
     'Dev-ops (needs a project dir set in Settings > Jarvis > WhatsApp Remote):',
     '  !git status',

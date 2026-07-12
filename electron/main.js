@@ -390,6 +390,23 @@ async function handleJarvisQuestion(question) {
     return { text: goal ? `Jarvis mode is on, guarding ${goal}.` : 'Jarvis mode is on. Set an active pursuit and I will guard it.' };
   }
 
+  // "Open Spotify", "launch Discord", "switch to Notepad" — actually do it, not just
+  // talk about it. Reuses the same launch/activate primitive restoreWorkspace() uses,
+  // so the risk surface stays the same: focus/launch an app by name, nothing more —
+  // no simulated keystrokes or clicks inside it.
+  const openMatch = q.match(/^(?:open|launch|switch\s+to|start)\s+(.+)$/i);
+  if (openMatch && !/\b(goal|pursuit)\b/i.test(lower)) {
+    const target = openMatch[1].trim().replace(/\s+(please|for me)$/i, '');
+    if (target) {
+      try {
+        const ok = await launchOrActivateApp(target);
+        return { text: ok ? `Opened ${target} for you.` : `Couldn't find or launch "${target}" on this machine.` };
+      } catch {
+        return { text: `Couldn't find or launch "${target}" on this machine.` };
+      }
+    }
+  }
+
   const wantsRecovery = lower.includes('where was i') ||
     lower.includes('restore yesterday') ||
     (lower.includes('working on') && lower.includes('yesterday'));
