@@ -1,0 +1,26 @@
+name: Deploy website to Vercel
+
+on:
+  push:
+    branches:
+      - master
+      - redesign-ui
+    paths:
+      - 'screenbuddy-site/**'
+      - '.github/workflows/deploy-website.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Vercel
+        run: |
+          # Vercel CLI deployment via npx to avoid auth issues
+          npx vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --confirm
+        working-directory: screenbuddy-site
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
