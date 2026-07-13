@@ -1,6 +1,6 @@
 {
   "name": "screenbuddy",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Pesto - a desktop focus companion that tracks pursuits, restores context, and guards against drift.",
   "main": "electron/main.js",
   "author": "Orbit Boyzz",

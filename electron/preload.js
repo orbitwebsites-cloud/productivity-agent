@@ -4,14 +4,30 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 // Set <html data-theme> before the page's own CSS/JS run, from the theme
 // main.js passed in via webPreferences.additionalArguments (see showApp) --
-// avoids a flash of the other theme's background on launch. Preload runs
-// early enough that document.documentElement already exists but nothing has
-// painted yet. A later live change (theme picker/switch) just re-sets this
-// same attribute directly from app.js; no reload needed either way.
+// avoids a flash of the other theme's background on launch. A later live
+// change (theme picker/switch) just re-sets this same attribute directly
+// from app.js; no reload needed either way.
+//
+// Under sandboxed preload (Electron's default since v20+), this script can
+// run before <html> is parsed, so document.documentElement is still null --
+// letting that throw here used to abort the ENTIRE preload script, silently
+// wiping out contextBridge.exposeInMainWorld('buddy', ...) below and leaving
+// window.buddy undefined for the whole window. Apply immediately if possible,
+// otherwise the instant <html> is inserted.
 const themeArg = process.argv.find((a) => a.startsWith('--sb-theme='));
 if (themeArg) {
   const theme = themeArg.slice('--sb-theme='.length) === 'dark' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', theme);
+  if (document.documentElement) {
+    document.documentElement.setAttribute('data-theme', theme);
+  } else {
+    const observer = new MutationObserver(() => {
+      if (document.documentElement) {
+        document.documentElement.setAttribute('data-theme', theme);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document, { childList: true });
+  }
 }
 
 // Bridge for BOTH windows (orb + panel). Each window loads this preload;

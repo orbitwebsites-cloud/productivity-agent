@@ -13,6 +13,19 @@ function addMsg(text, who) {
   return el;
 }
 
+function addThinking(who) {
+  const el = document.createElement('div');
+  el.className = `msg ${who}`;
+  el.innerHTML = '<span class="dots"><span></span><span></span><span></span></span>';
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+  return el;
+}
+
+function setMsgText(el, text) {
+  el.textContent = text;
+}
+
 function addActions(actions) {
   if (!actions || !actions.length) return;
   const row = document.createElement('div');
@@ -23,13 +36,13 @@ function addActions(actions) {
     btn.textContent = action.label || 'Run action';
     btn.addEventListener('click', async () => {
       btn.disabled = true;
-      const thinking = addMsg('Working on that...', 'pesto');
+      const thinking = addThinking('pesto');
       try {
         const result = await window.buddy.runAction(action.id);
-        thinking.textContent = result && result.text ? result.text : 'Done.';
+        setMsgText(thinking, result && result.text ? result.text : 'Done.');
         refreshStatus();
       } catch {
-        thinking.textContent = "I couldn't run that action just now.";
+        setMsgText(thinking, "I couldn't run that action just now.");
       }
       chat.scrollTop = chat.scrollHeight;
     });
@@ -43,17 +56,17 @@ async function ask(question) {
   if (!question || !question.trim()) return;
   addMsg(question, 'me');
   input.value = '';
-  const thinking = addMsg('...', 'pesto');
+  const thinking = addThinking('pesto');
   try {
     const reply = await window.buddy.ask(question);
     if (reply && typeof reply === 'object') {
-      thinking.textContent = reply.text || '';
+      setMsgText(thinking, reply.text || '');
       addActions(reply.actions || []);
     } else {
-      thinking.textContent = reply;
+      setMsgText(thinking, reply);
     }
   } catch {
-    thinking.textContent = "Hmm, I couldn't check that just now.";
+    setMsgText(thinking, "Hmm, I couldn't check that just now.");
   }
   chat.scrollTop = chat.scrollHeight;
 }
